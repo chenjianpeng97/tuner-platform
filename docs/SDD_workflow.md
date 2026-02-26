@@ -10,9 +10,9 @@
 3. [接口实现]实现backend/presentation/http的fastapi路由定义和RequestPydantic定义,接口留下@inject注册执行函数的位置
 4. [接口实现]实现application层的执行函数返回Response模型
 5. [接口文档编排测试](../.codex/skills/http-stage-behave-testing/)实现接口编排的BDD测试，验证接口编排可行，Response和Request定义合理
-6. [接口文档]通过fastapi自动生成接口文档到根目录docs/api_doc.md
-7. [前端实现]前端通过工具将openapi文档转换成前端接口调用代码，编写前端界面
-8. [前端实现]前端编写mock.js模拟接口数据，验证前端界面设计合理
+6. [接口文档]通过fastapi自动导出OpenAPI文档到根目录`docs/api_doc.json`（可选再生成可读markdown）
+7. [前端实现]前端通过代码生成工具（如 Orval）将`api_doc.json`转换成TypeScript接口调用代码，编写前端界面
+8. [前端实现]前端通过统一mock基线样本（JSON fixtures）+ MSW生成/聚合的handlers进行mock验证，避免手写零散mock.js
 9. [前端实现]风格统一的实现新的页面或组件，自有组件应在关键地方加data-testid
 10. [前端测试]以mock模式运行前端,并且实现前端的BDD测试(stage=ui),验证前端页面设计对需求的可行性
 11. [后端实现]以TDD的形式，编写unit测试(../backend/tests/app/unit/各层)测试

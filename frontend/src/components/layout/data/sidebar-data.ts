@@ -50,7 +50,22 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'Business',
+      items: [
+        {
+          title: 'Users',
+          url: '/users',
+          icon: Users,
+        },
+        {
+          title: 'Account',
+          url: '/settings/account',
+          icon: Wrench,
+        },
+      ],
+    },
+    {
+      title: 'Template',
       items: [
         {
           title: 'Dashboard',
@@ -74,11 +89,6 @@ export const sidebarData: SidebarData = {
           icon: MessagesSquare,
         },
         {
-          title: 'Users',
-          url: '/users',
-          icon: Users,
-        },
-        {
           title: 'Secured by Clerk',
           icon: ClerkLogo,
           items: [
@@ -96,11 +106,6 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
-      ],
-    },
-    {
-      title: 'Pages',
-      items: [
         {
           title: 'Auth',
           icon: ShieldCheck,
@@ -158,11 +163,6 @@ export const sidebarData: SidebarData = {
             },
           ],
         },
-      ],
-    },
-    {
-      title: 'Other',
-      items: [
         {
           title: 'Settings',
           icon: Settings,
@@ -171,11 +171,6 @@ export const sidebarData: SidebarData = {
               title: 'Profile',
               url: '/settings',
               icon: UserCog,
-            },
-            {
-              title: 'Account',
-              url: '/settings/account',
-              icon: Wrench,
             },
             {
               title: 'Appearance',

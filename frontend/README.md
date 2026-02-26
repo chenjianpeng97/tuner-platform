@@ -100,6 +100,36 @@ Start the server
   pnpm run dev
 ```
 
+## API & Mock Workflow
+
+Use OpenAPI contract from repository root:
+
+```bash
+pnpm run api:generate
+```
+
+Run with MSW mock mode:
+
+```bash
+pnpm run mock:init
+pnpm run dev:mock
+```
+
+Run with real backend integration:
+
+```bash
+pnpm run dev
+```
+
+Environment variables:
+
+- `VITE_API_BASE_URL` (default `http://127.0.0.1:8000`)
+- `VITE_ENABLE_MSW` (`true` to enable browser mock interception)
+
+Notes:
+
+- If `mockServiceWorker.js` is missing, run `pnpm run mock:init` once to install/update the worker in `public/`.
+
 ## Sponsoring this project ❤️
 
 If you find this project helpful or use this in your own work, consider [sponsoring me](https://github.com/sponsors/satnaing) to support development and maintenance. You can [buy me a coffee](https://buymeacoffee.com/satnaing) as well. Don’t worry, every penny helps. Thank you! 🙏

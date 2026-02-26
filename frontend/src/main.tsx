@@ -18,6 +18,15 @@ import { routeTree } from './routeTree.gen'
 // Styles
 import './styles/index.css'
 
+async function enableMocking() {
+  if (import.meta.env.VITE_ENABLE_MSW !== 'true') return
+
+  const { worker } = await import('@/mocks/browser')
+  await worker.start({
+    onUnhandledRequest: 'bypass',
+  })
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -90,18 +99,20 @@ declare module '@tanstack/react-router' {
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
-  const root = ReactDOM.createRoot(rootElement)
-  root.render(
-    <StrictMode>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <FontProvider>
-            <DirectionProvider>
-              <RouterProvider router={router} />
-            </DirectionProvider>
-          </FontProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
-    </StrictMode>
-  )
+  enableMocking().then(() => {
+    const root = ReactDOM.createRoot(rootElement)
+    root.render(
+      <StrictMode>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <FontProvider>
+              <DirectionProvider>
+                <RouterProvider router={router} />
+              </DirectionProvider>
+            </FontProvider>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </StrictMode>
+    )
+  })
 }
