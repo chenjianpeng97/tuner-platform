@@ -2,7 +2,7 @@
 
 - [ ] 1.1 在 `frontend` 引入 `orval` 与 `msw` 依赖，并补充 `api:generate` 等脚本
 - [ ] 1.2 新建 Orval 配置，输入固定为 `docs/api_doc.json`，输出到 `src/api/generated/*`
-- [ ] 1.3 建立 `src/api/http-client.ts` 与 `src/api/business/*` 分层边界，约束 generated 代码禁止手改
+- [ ] 1.3 建立 `src/api/http-client.ts` 与 `src/api/account/*`、`src/api/users/*` 模块边界，约束 generated 代码禁止手改
 
 ## 2. Mock 运行时与基线样本
 
@@ -19,7 +19,7 @@
 
 ## 4. Users 真实接口接入
 
-- [ ] 4.1 用 generated/business API 替换 users 静态数据源
+- [ ] 4.1 用 generated + `src/api/users/*` 替换 users 静态数据源
 - [ ] 4.2 接入 users 全量操作接口（列表、创建、激活/停用、授权/撤销 admin、设密）
 - [ ] 4.3 将 users 页面模型收敛到当前契约字段（`id_`, `username`, `role`, `is_active`）
 - [ ] 4.4 将分页排序参数映射到当前导出契约（`limit/offset/sorting_field/sorting_order`）

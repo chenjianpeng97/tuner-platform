@@ -16,7 +16,7 @@
 2. 新增前端 API 层：
    - `src/api/generated/*`（Orval 生成）
    - `src/api/http-client.ts`（axios 实例、baseURL、withCredentials）
-   - `src/api/business/*`（对生成代码做业务封装）
+   - `src/api/account/*`、`src/api/users/*`（按后端模块划分的手写集成层）
 3. 新增 Mock 层：
    - `src/mocks/browser.ts`
    - `src/mocks/handlers.ts`（聚合 Orval 生成 handlers + 自定义场景 handlers）

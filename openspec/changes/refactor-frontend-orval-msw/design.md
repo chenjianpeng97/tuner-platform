@@ -43,12 +43,12 @@
   - OpenAPI Generator + 手写 MSW：可行但模板重、mock 与客户端分离，维护成本更高。
   - 仅生成 types：无法满足“快速生成业务代码+mock”的流程目标。
 
-### Decision 3: 建立 API 基础设施分层，隔离“生成代码”与“业务调用”
+### Decision 3: API 目录按后端模块对齐，隔离生成代码与手写集成代码
 - 决策：
   - `src/api/generated/*` 只存放生成产物（禁止手改）。
   - `src/api/http-client.ts` 统一 axios/baseURL/withCredentials/错误拦截。
-  - `src/api/business/*` 作为页面调用入口（可做参数与错误语义封装）。
-- 原因：避免页面直接依赖生成细节，降低 OpenAPI 变更对 UI 代码的冲击。
+  - 手写 API 适配代码按后端模块划分在 `src/api/account/*`、`src/api/users/*` 等目录。
+- 原因：在避免页面直接依赖生成细节的同时，与后端模块命名保持一致，降低理解与维护成本。
 - 备选方案：
   - 页面直接调用 generated 方法：短期快，但后期变更扩散严重。
 
@@ -88,7 +88,7 @@
    - 重组侧边栏为 `Business` + `Template`。
    - 将展示页移动到 `features/template/*`（保留现有 URL）。
 3. **users 业务改造**
-   - 用 generated + business API 替换静态 users 数据与操作。
+   - 用 generated + `api/users` 模块替换静态 users 数据与操作。
    - 对齐筛选、分页、排序、错误处理。
 4. **account 业务改造**
    - 替换 sign-in/sign-up/logout/password 为真实接口调用。
