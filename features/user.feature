@@ -1,3 +1,4 @@
+@http
 Feature: User management
   The system manages user creation and activation state.
 
