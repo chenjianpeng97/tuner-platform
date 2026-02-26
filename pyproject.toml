@@ -12,15 +12,15 @@ package = false
 members = ["backend"]
 
 [tool.uv.sources]
-fastapi-clean-example = { workspace = true }
+tuner-backend = { workspace = true }
 
 [dependency-groups]
 bdd = [
     "behave>=1.2.6",
-    "fastapi-clean-example",
+    "tuner-backend",
 ]
 skills = [
-    "fastapi-clean-example",
+    "tuner-backend",
     "pyyaml>=6.0.2",
 ]
 dev = [

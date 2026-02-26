@@ -56,11 +56,11 @@ package = false
 members = ["backend"]
 
 [tool.uv.sources]
-fastapi-clean-example = { workspace = true }
+tuner-backend = { workspace = true }
 
 [dependency-groups]
-bdd = ["behave>=1.2.6", "fastapi-clean-example"]
-skills = ["fastapi-clean-example", "pyyaml>=6.0.2"]
+bdd = ["behave>=1.2.6", "tuner-backend"]
+skills = ["tuner-backend", "pyyaml>=6.0.2"]
 dev = [{ include-group = "bdd" }, { include-group = "skills" }]
 ```
 

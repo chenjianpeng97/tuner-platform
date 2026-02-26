@@ -4,7 +4,7 @@ requires-python = "==3.13.*"
 
 [manifest]
 members = [
-    "fastapi-clean-example",
+    "tuner-backend",
     "tuner-platform-workspace",
 ]
 
@@ -332,7 +332,7 @@ wheels = [
 ]
 
 [[package]]
-name = "fastapi-clean-example"
+name = "tuner-backend"
 version = "0.1"
 source = { editable = "backend" }
 dependencies = [
@@ -1025,15 +1025,15 @@ source = { virtual = "." }
 [package.dev-dependencies]
 bdd = [
     { name = "behave" },
-    { name = "fastapi-clean-example" },
+    { name = "tuner-backend" },
 ]
 dev = [
     { name = "behave" },
-    { name = "fastapi-clean-example" },
+    { name = "tuner-backend" },
     { name = "pyyaml" },
 ]
 skills = [
-    { name = "fastapi-clean-example" },
+    { name = "tuner-backend" },
     { name = "pyyaml" },
 ]
 
@@ -1042,15 +1042,15 @@ skills = [
 [package.metadata.requires-dev]
 bdd = [
     { name = "behave", specifier = ">=1.2.6" },
-    { name = "fastapi-clean-example", editable = "backend" },
+    { name = "tuner-backend", editable = "backend" },
 ]
 dev = [
     { name = "behave", specifier = ">=1.2.6" },
-    { name = "fastapi-clean-example", editable = "backend" },
+    { name = "tuner-backend", editable = "backend" },
     { name = "pyyaml", specifier = ">=6.0.2" },
 ]
 skills = [
-    { name = "fastapi-clean-example", editable = "backend" },
+    { name = "tuner-backend", editable = "backend" },
     { name = "pyyaml", specifier = ">=6.0.2" },
 ]
 
