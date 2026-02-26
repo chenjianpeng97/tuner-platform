@@ -1,0 +1,4 @@
+interface:
+  display_name: "Tuner Frontend Guideline"
+  short_description: "Template/Orval/MSW 前端开发规范"
+  default_prompt: "Use $tuner-frontend-guideline to implement frontend changes with Template boundaries, Orval codegen, and MSW mock workflow."
