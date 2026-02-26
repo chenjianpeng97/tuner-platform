@@ -1,0 +1,11 @@
+{
+  "defaultSignupResponse": {
+    "id": "11111111-1111-1111-1111-111111111111"
+  },
+  "defaultCurrentUserFallback": {
+    "username": "demo_user",
+    "role": "user",
+    "exp": 4102444800000
+  },
+  "passwordChanged": true
+}

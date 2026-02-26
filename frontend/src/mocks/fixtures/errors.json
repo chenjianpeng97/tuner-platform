@@ -1,0 +1,6 @@
+{
+  "unauthorized": { "error": "Unauthorized" },
+  "forbidden": { "error": "Forbidden" },
+  "conflict": { "error": "Conflict" },
+  "notFound": { "error": "Not Found" }
+}

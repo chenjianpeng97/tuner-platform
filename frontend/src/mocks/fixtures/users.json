@@ -1,0 +1,77 @@
+{
+  "total": 12,
+  "users": [
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d001",
+      "username": "superadmin",
+      "role": "super_admin",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d002",
+      "username": "alice_admin",
+      "role": "admin",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d003",
+      "username": "bob_user",
+      "role": "user",
+      "is_active": false
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d004",
+      "username": "carol_ops",
+      "role": "admin",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d005",
+      "username": "dave_finance",
+      "role": "user",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d006",
+      "username": "erin_support",
+      "role": "user",
+      "is_active": false
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d007",
+      "username": "frank_reviewer",
+      "role": "admin",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d008",
+      "username": "grace_pm",
+      "role": "user",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d009",
+      "username": "henry_guest",
+      "role": "user",
+      "is_active": false
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d010",
+      "username": "ivy_audit",
+      "role": "admin",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d011",
+      "username": "jack_dev",
+      "role": "user",
+      "is_active": true
+    },
+    {
+      "id_": "a5e51cb5-a31a-4a8d-9d67-11f2aab8d012",
+      "username": "kate_viewer",
+      "role": "user",
+      "is_active": false
+    }
+  ]
+}
