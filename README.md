@@ -25,3 +25,39 @@ tuner-platform/
 ├── LICENSE
 └── README.md
 ```
+
+## Python 环境管理（uv workspace）
+
+### 目标
+- 单一根锁文件：`uv.lock`
+- `backend` 继续保留自己的 `pyproject.toml`
+- `features`（BDD）和未来 skills Python 脚本共享同一套依赖解析
+
+### 一次性准备
+```bash
+uv python install 3.13
+uv lock
+```
+
+### 常用命令
+```bash
+# 后端（使用 backend 项目）
+uv sync --project backend --group dev
+uv run --project backend pytest
+
+# BDD
+uv sync --group bdd
+uv run --group bdd behave features
+
+# Skills 脚本
+uv sync --group skills
+uv run --group skills python -c "import app; import yaml; print('skills env ok')"
+
+# 本地全量安装
+uv sync --all-groups --all-packages
+```
+
+### 跨目录导入验证
+```bash
+uv run --group bdd python -c "import app; print(app.__file__)"
+```

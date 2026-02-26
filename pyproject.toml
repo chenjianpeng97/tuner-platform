@@ -1,0 +1,29 @@
+[project]
+name = "tuner-platform-workspace"
+version = "0.1.0"
+description = "Workspace root for tuner-platform Python tooling"
+requires-python = ">=3.13,<3.14"
+dependencies = []
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["backend"]
+
+[tool.uv.sources]
+fastapi-clean-example = { workspace = true }
+
+[dependency-groups]
+bdd = [
+    "behave>=1.2.6",
+    "fastapi-clean-example",
+]
+skills = [
+    "fastapi-clean-example",
+    "pyyaml>=6.0.2",
+]
+dev = [
+    { include-group = "bdd" },
+    { include-group = "skills" },
+]

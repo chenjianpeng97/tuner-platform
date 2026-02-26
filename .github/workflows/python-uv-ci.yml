@@ -1,0 +1,51 @@
+name: Python UV CI
+
+on:
+  push:
+    paths:
+      - "backend/**"
+      - "features/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/python-uv-ci.yml"
+  pull_request:
+    paths:
+      - "backend/**"
+      - "features/**"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/python-uv-ci.yml"
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync --project backend --group test
+      - run: uv run --project backend pytest
+
+  bdd-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync --group bdd
+      - run: uv run --group bdd behave features
+
+  skills-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync --group skills
+      - run: uv run --group skills python -c "import app; import yaml; print('skills env ok')"
