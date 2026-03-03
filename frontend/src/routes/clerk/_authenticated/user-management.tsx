@@ -26,8 +26,7 @@ export const Route = createFileRoute('/clerk/_authenticated/user-management')({
 })
 
 function UserManagement() {
-  const search = Route.useSearch()
-  const navigate = Route.useNavigate()
+
 
   const [opened, setOpened] = useState(true)
   const { isLoaded, isSignedIn } = useAuth()
@@ -90,7 +89,7 @@ function UserManagement() {
               <UsersPrimaryButtons />
             </div>
             <div className='-mx-4 flex-1 overflow-auto px-4 py-1 lg:flex-row lg:space-y-0 lg:space-x-12'>
-              <UsersTable data={users} navigate={navigate} search={search} />
+              <UsersTable data={users} />
             </div>
           </Main>
 
