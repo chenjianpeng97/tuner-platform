@@ -24,11 +24,7 @@
    - `frontend/src/api/generated/users/users.ts`
 2. 业务封装层统一通过工厂调用：
    - `getAccount()` / `getUsers()`
-3. 已清理旧根文件，禁止再引用：
-   - `frontend/src/api/generated/account.ts`
-   - `frontend/src/api/generated/users.ts`
-   - `frontend/src/api/generated/types.ts`
-4. `mockServiceWorker.js` 不由 Orval 生成：
+3. `mockServiceWorker.js` 不由 Orval 生成：
    - Orval 负责生成 `*.msw.ts` handler 代码
    - `pnpm --dir frontend run mock:init` 负责初始化浏览器 worker 文件
 
