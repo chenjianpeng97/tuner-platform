@@ -121,6 +121,11 @@ Run with real backend integration:
 pnpm run dev
 ```
 
+Mode matrix:
+
+- `pnpm run dev`: real backend (default, MSW disabled unless you manually set `VITE_ENABLE_MSW=true`)
+- `pnpm run dev:mock`: MSW enabled with fixtures/handlers
+
 Environment variables:
 
 - `VITE_API_BASE_URL` (default `http://127.0.0.1:8000`)
@@ -129,6 +134,7 @@ Environment variables:
 Notes:
 
 - If `mockServiceWorker.js` is missing, run `pnpm run mock:init` once to install/update the worker in `public/`.
+- If you unexpectedly still see mocked data in `pnpm run dev`, check browser DevTools > Application > Service Workers and unregister stale workers, then hard refresh.
 
 ## Sponsoring this project ❤️
 
