@@ -10,26 +10,25 @@ import {
   listUsers,
   revokeAdmin,
   setUserPassword,
-  type UserQueryModel,
   type UserRole,
 } from '@/api/users'
-import { type User } from '../data/schema'
 import type { NavigateFn } from '@/hooks/use-table-url-state'
+import { type UsersRowViewModel, toUsersRows } from '../model'
 
 const route = getRouteApi('/_authenticated/users/')
 
-type UsersDialogType = 'invite' | 'add' | 'edit' | 'delete'
+type UsersDialogType = 'add' | 'edit'
 
 type UsersContextType = {
   open: UsersDialogType | null
   setOpen: (str: UsersDialogType | null) => void
-  currentRow: User | null
-  setCurrentRow: React.Dispatch<React.SetStateAction<User | null>>
+  currentRow: UsersRowViewModel | null
+  setCurrentRow: React.Dispatch<React.SetStateAction<UsersRowViewModel | null>>
   // routing
   search: Record<string, unknown>
   navigate: NavigateFn
   // data
-  users: UserQueryModel[]
+  rows: UsersRowViewModel[]
   total: number
   loading: boolean
   page: number
@@ -37,17 +36,24 @@ type UsersContextType = {
   pageCount: number
   refreshUsers: () => Promise<void>
   // mutations
-  createUser: (payload: { username: string; password: string; role: UserRole }) => void
-  setPassword: (payload: { userId: string; password: string }) => void
-  toggleActivation: (payload: { userId: string; isActive: boolean }) => void
-  toggleAdmin: (payload: { userId: string; role: UserRole }) => void
+  createUser: (payload: {
+    username: string
+    password: string
+    role: UserRole
+  }) => Promise<void>
+  setPassword: (payload: { userId: string; password: string }) => Promise<void>
+  setUserActivation: (payload: {
+    userId: string
+    isActive: boolean
+  }) => Promise<void>
+  setUserAdmin: (payload: { userId: string; isAdmin: boolean }) => Promise<void>
 }
 
 const UsersContext = React.createContext<UsersContextType | null>(null)
 
 export function UsersProvider({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useDialogState<UsersDialogType>(null)
-  const [currentRow, setCurrentRow] = useState<User | null>(null)
+  const [currentRow, setCurrentRow] = useState<UsersRowViewModel | null>(null)
 
   const search = route.useSearch()
   const routeNavigate = route.useNavigate()
@@ -88,39 +94,53 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
     },
   })
 
-  const toggleActivationMutation = useMutation({
+  const setActivationMutation = useMutation({
     mutationFn: ({ userId, isActive }: { userId: string; isActive: boolean }) =>
-      isActive ? deactivateUser(userId) : activateUser(userId),
+      isActive ? activateUser(userId) : deactivateUser(userId),
     onSuccess: async () => {
       await refreshUsers()
     },
   })
 
-  const toggleAdminMutation = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: UserRole }) =>
-      role === 'admin' ? revokeAdmin(userId) : grantAdmin(userId),
+  const setAdminMutation = useMutation({
+    mutationFn: ({ userId, isAdmin }: { userId: string; isAdmin: boolean }) =>
+      isAdmin ? grantAdmin(userId) : revokeAdmin(userId),
     onSuccess: async () => {
       await refreshUsers()
     },
   })
 
-  const users = (usersQuery.data?.users ?? []) as UserQueryModel[]
+  const rows = toUsersRows(usersQuery.data?.users ?? [])
   const total = usersQuery.data?.total ?? 0
   const currentPage = search.page ?? 1
   const pageSize = search.pageSize ?? 10
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
 
-  const createUserFn = (payload: { username: string; password: string; role: UserRole }) =>
-    createUserMutation.mutate(payload)
+  const createUserFn = async (payload: {
+    username: string
+    password: string
+    role: UserRole
+  }) => {
+    await createUserMutation.mutateAsync(payload)
+  }
 
-  const setPasswordFn = (payload: { userId: string; password: string }) =>
-    setPasswordMutation.mutate(payload)
+  const setPasswordFn = async (payload: { userId: string; password: string }) => {
+    await setPasswordMutation.mutateAsync(payload)
+  }
 
-  const toggleActivationFn = (payload: { userId: string; isActive: boolean }) =>
-    toggleActivationMutation.mutate(payload)
+  const setUserActivationFn = async (payload: {
+    userId: string
+    isActive: boolean
+  }) => {
+    await setActivationMutation.mutateAsync(payload)
+  }
 
-  const toggleAdminFn = (payload: { userId: string; role: UserRole }) =>
-    toggleAdminMutation.mutate(payload)
+  const setUserAdminFn = async (payload: {
+    userId: string
+    isAdmin: boolean
+  }) => {
+    await setAdminMutation.mutateAsync(payload)
+  }
 
   return (
     <UsersContext.Provider
@@ -131,7 +151,7 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         setCurrentRow,
         search,
         navigate,
-        users,
+        rows,
         total,
         loading: usersQuery.isLoading,
         page: currentPage,
@@ -140,8 +160,8 @@ export function UsersProvider({ children }: { children: React.ReactNode }) {
         refreshUsers,
         createUser: createUserFn,
         setPassword: setPasswordFn,
-        toggleActivation: toggleActivationFn,
-        toggleAdmin: toggleAdminFn,
+        setUserActivation: setUserActivationFn,
+        setUserAdmin: setUserAdminFn,
       }}
     >
       {children}
