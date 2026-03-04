@@ -1,4 +1,5 @@
 import {
+  ClipboardList,
   Construction,
   LayoutDashboard,
   Monitor,
@@ -52,6 +53,11 @@ export const sidebarData: SidebarData = {
     {
       title: 'Business',
       items: [
+        {
+          title: 'Survey Forms',
+          url: '/survey-forms',
+          icon: ClipboardList,
+        },
         {
           title: 'Users',
           url: '/users',
