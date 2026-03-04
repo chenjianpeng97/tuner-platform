@@ -12,7 +12,8 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
-import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
+import { useTableUrlState } from '@/hooks/use-table-url-state'
+import { useUsers } from './users-provider'
 import {
   Table,
   TableBody,
@@ -29,11 +30,10 @@ import { usersColumns as columns } from './users-columns'
 
 type DataTableProps = {
   data: User[]
-  search: Record<string, unknown>
-  navigate: NavigateFn
 }
 
-export function UsersTable({ data, search, navigate }: DataTableProps) {
+export function UsersTable({ data }: DataTableProps) {
+  const { search, navigate } = useUsers()
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -140,9 +140,9 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}
