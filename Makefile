@@ -1,13 +1,25 @@
 SHELL := /bin/bash
 APP_ENV ?= local
 
-.PHONY: bdd-http frontend-dev backend-dev backend-dev-doc dev
+.PHONY: bdd-http frontend-dev frontend-dev-mock frontend-api-generate frontend-api-typecheck frontend-mock-init backend-dev backend-dev-doc dev
 
 bdd-http:
 	uv run --group bdd behave --stage http --tags http
 
 frontend-dev:
 	pnpm --dir frontend run dev
+
+frontend-dev-mock:
+	pnpm --dir frontend run dev:mock
+
+frontend-api-generate:
+	pnpm --dir frontend run api:generate
+
+frontend-api-typecheck:
+	pnpm --dir frontend exec tsc -p tsconfig.app.json --noEmit
+
+frontend-mock-init:
+	pnpm --dir frontend run mock:init
 
 backend-dev:
 	APP_ENV=$(APP_ENV) uv run --project backend python -m app.run
