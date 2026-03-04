@@ -36,9 +36,12 @@ const surveyFormSchema = z.object({
     role: z.string().min(1, {
         message: 'Please select a role.',
     }),
-    satisfaction: z.enum(['very-satisfied', 'satisfied', 'neutral', 'dissatisfied', 'very-dissatisfied'] as const, {
-        errorMap: () => ({ message: 'You need to select a satisfaction level.' }),
-    }),
+    satisfaction: z.enum(
+        ['very-satisfied', 'satisfied', 'neutral', 'dissatisfied', 'very-dissatisfied'] as const,
+        {
+            message: 'You need to select a satisfaction level.',
+        }
+    ),
     featuresUsed: z.array(z.string()).refine((value) => value.some((item) => item), {
         message: 'You have to select at least one feature.',
     }),

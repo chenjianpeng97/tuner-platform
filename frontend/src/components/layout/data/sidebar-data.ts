@@ -54,7 +54,7 @@ export const sidebarData: SidebarData = {
       title: 'Business',
       items: [
         {
-          title: 'Survey Forms',
+          title: 'Survey Workflow',
           url: '/survey-forms',
           icon: ClipboardList,
         },

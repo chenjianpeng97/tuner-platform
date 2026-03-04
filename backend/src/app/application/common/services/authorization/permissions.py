@@ -51,3 +51,13 @@ class CanManageRole(Permission[RoleManagementContext]):
     def is_satisfied_by(self, context: RoleManagementContext) -> bool:
         allowed_roles = self._role_hierarchy.get(context.subject.role, set())
         return context.target_role in allowed_roles
+
+
+@dataclass(frozen=True, kw_only=True)
+class SurveyLibraryContext(PermissionContext):
+    subject: User
+
+
+class CanAccessSurveyLibrary(Permission[SurveyLibraryContext]):
+    def is_satisfied_by(self, context: SurveyLibraryContext) -> bool:
+        return context.subject.role in {UserRole.ADMIN, UserRole.SUPER_ADMIN}

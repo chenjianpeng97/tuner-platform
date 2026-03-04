@@ -1,0 +1,112 @@
+{
+  "templates": [
+    {
+      "id_": "11111111-1111-1111-1111-111111111111",
+      "name": "Platform Feedback",
+      "latest_published_version_id": "21111111-1111-1111-1111-111111111111"
+    }
+  ],
+  "templateDetails": {
+    "11111111-1111-1111-1111-111111111111": {
+      "id_": "11111111-1111-1111-1111-111111111111",
+      "name": "Platform Feedback",
+      "latest_published_version_id": "21111111-1111-1111-1111-111111111111",
+      "questions": [
+        {
+          "key": "role",
+          "title": "Your role",
+          "question_type": "single_choice",
+          "required": true,
+          "options": ["dev", "pm", "qa"]
+        },
+        {
+          "key": "tools",
+          "title": "Tools used",
+          "question_type": "multi_choice",
+          "required": false,
+          "options": ["dashboard", "api", "cli"]
+        },
+        {
+          "key": "feedback",
+          "title": "Feedback",
+          "question_type": "text",
+          "required": false,
+          "options": []
+        }
+      ]
+    }
+  },
+  "assignments": [
+    {
+      "id_": "31111111-1111-1111-1111-111111111111",
+      "template_version_id": "21111111-1111-1111-1111-111111111111",
+      "status": "in_progress",
+      "due_at": null,
+      "assignee_count": 3,
+      "submitted_count": 1,
+      "ratio": 0.3333
+    }
+  ],
+  "assignmentDetails": {
+    "31111111-1111-1111-1111-111111111111": {
+      "id_": "31111111-1111-1111-1111-111111111111",
+      "template_version_id": "21111111-1111-1111-1111-111111111111",
+      "status": "in_progress",
+      "due_at": null,
+      "assignee_user_ids": [
+        "41111111-1111-1111-1111-111111111111",
+        "51111111-1111-1111-1111-111111111111",
+        "61111111-1111-1111-1111-111111111111"
+      ],
+      "assignee_count": 3,
+      "submitted_count": 1,
+      "ratio": 0.3333
+    }
+  },
+  "mySubmissions": {
+    "31111111-1111-1111-1111-111111111111": {
+      "assignment_id": "31111111-1111-1111-1111-111111111111",
+      "assignee_user_id": "41111111-1111-1111-1111-111111111111",
+      "answers": {
+        "role": "dev",
+        "feedback": "need better filters"
+      },
+      "submitted_at": "2026-03-04T09:00:00+00:00"
+    }
+  },
+  "submissions": {
+    "31111111-1111-1111-1111-111111111111": [
+      {
+        "assignment_id": "31111111-1111-1111-1111-111111111111",
+        "assignee_user_id": "41111111-1111-1111-1111-111111111111",
+        "answers": {
+          "role": "dev",
+          "tools": ["dashboard", "api"],
+          "feedback": "need better filters"
+        },
+        "submitted_at": "2026-03-04T09:00:00+00:00"
+      }
+    ]
+  },
+  "summaries": {
+    "31111111-1111-1111-1111-111111111111": {
+      "assignment_id": "31111111-1111-1111-1111-111111111111",
+      "choice_counts": {
+        "role": {"dev": 1},
+        "tools": {"dashboard": 1, "api": 1}
+      },
+      "text_answers": {
+        "feedback": ["need better filters"]
+      }
+    }
+  },
+  "auditLogs": [
+    {
+      "id_": "71111111-1111-1111-1111-111111111111",
+      "actor_user_id": "81111111-1111-1111-1111-111111111111",
+      "assignment_id": "31111111-1111-1111-1111-111111111111",
+      "action": "survey_result_detail_view",
+      "occurred_at": "2026-03-04T10:00:00+00:00"
+    }
+  ]
+}
