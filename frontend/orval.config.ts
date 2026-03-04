@@ -12,7 +12,7 @@ export default defineConfig({
       override: {
         mutator: {
           path: './src/api/http-client.ts',
-          name: 'apiClient',
+          name: 'orvalMutator',
         },
       },
     },

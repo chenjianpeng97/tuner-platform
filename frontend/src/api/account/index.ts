@@ -1,16 +1,15 @@
 import {
-  changePasswordApiV1AccountPasswordPut,
-  loginApiV1AccountLoginPost,
-  logoutApiV1AccountLogoutDelete,
-  signUpApiV1AccountSignupPost,
-} from '@/api/generated/account'
+  getAccount,
+} from '@/api/generated/account/account'
 import type {
-  ChangePasswordRequest,
+  BodyChangePasswordApiV1AccountPasswordPut as ChangePasswordRequest,
   LogInRequest,
   SignUpRequest,
   SignUpResponse,
   UserRole,
-} from '@/api/generated/types'
+} from '@/api/generated/models'
+
+const accountApi = getAccount()
 
 export interface CurrentUserFallback {
   username: string
@@ -25,11 +24,11 @@ export const FALLBACK_CURRENT_USER: CurrentUserFallback = {
 }
 
 export async function signUp(payload: SignUpRequest): Promise<SignUpResponse> {
-  return signUpApiV1AccountSignupPost(payload)
+  return accountApi.signUpApiV1AccountSignupPost(payload)
 }
 
 export async function login(payload: LogInRequest): Promise<CurrentUserFallback> {
-  await loginApiV1AccountLoginPost(payload)
+  await accountApi.loginApiV1AccountLoginPost(payload)
   return {
     username: payload.username,
     role: FALLBACK_CURRENT_USER.role,
@@ -38,9 +37,9 @@ export async function login(payload: LogInRequest): Promise<CurrentUserFallback>
 }
 
 export async function logout(): Promise<void> {
-  await logoutApiV1AccountLogoutDelete()
+  await accountApi.logoutApiV1AccountLogoutDelete()
 }
 
 export async function changePassword(payload: ChangePasswordRequest): Promise<void> {
-  await changePasswordApiV1AccountPasswordPut(payload)
+  await accountApi.changePasswordApiV1AccountPasswordPut(payload)
 }
