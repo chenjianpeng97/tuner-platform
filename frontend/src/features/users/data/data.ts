@@ -6,24 +6,28 @@ export const callTypes = new Map<'active' | 'inactive', string>([
   ['inactive', 'bg-neutral-300/40 border-neutral-300'],
 ])
 
-export const roles = [
-  {
-    label: 'Super Admin',
-    value: 'super_admin',
-    icon: Shield,
-  },
-  {
-    label: 'Admin',
-    value: 'admin',
-    icon: UserCheck,
-  },
-  {
-    label: 'User',
-    value: 'user',
-    icon: User,
-  },
-] as const satisfies ReadonlyArray<{
+type RoleItem = {
   label: string
   value: UserRole
   icon: LucideIcon
-}>
+}
+
+export function getRoles(t: (key: string) => string): ReadonlyArray<RoleItem> {
+  return [
+    {
+      label: t('users.roles.super_admin'),
+      value: 'super_admin',
+      icon: Shield,
+    },
+    {
+      label: t('users.roles.admin'),
+      value: 'admin',
+      icon: UserCheck,
+    },
+    {
+      label: t('users.roles.user'),
+      value: 'user',
+      icon: User,
+    },
+  ] as const
+}

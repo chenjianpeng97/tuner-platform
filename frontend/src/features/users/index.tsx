@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -10,6 +11,8 @@ import { UsersProvider } from './components/users-provider'
 import { UsersTable } from './components/users-table'
 
 export function Users() {
+    const { t } = useTranslation('business')
+
     return (
         <UsersProvider>
             <Header fixed>
@@ -24,9 +27,9 @@ export function Users() {
             <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
                 <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div>
-                        <h2 className='text-2xl font-bold tracking-tight'>Users</h2>
+                        <h2 className='text-2xl font-bold tracking-tight'>{t('users.title')}</h2>
                         <p className='text-muted-foreground'>
-                            系统用户列表
+                            {t('users.description')}
                         </p>
                     </div>
                     <UsersPrimaryButtons />

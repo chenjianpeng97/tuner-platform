@@ -16,6 +16,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { ConfigDrawer } from '@/components/config-drawer'
 import {
@@ -69,6 +70,8 @@ type AssignmentRowActionsProps = {
 }
 
 function AssignmentRowActions({ row }: AssignmentRowActionsProps) {
+    const { t } = useTranslation(['business', 'common'])
+
     return (
         <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
@@ -77,7 +80,7 @@ function AssignmentRowActions({ row }: AssignmentRowActionsProps) {
                     className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
                 >
                     <DotsHorizontalIcon className='h-4 w-4' />
-                    <span className='sr-only'>Open actions menu</span>
+                    <span className='sr-only'>{t('common:menu.openActionsMenu')}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[160px]'>
@@ -86,7 +89,7 @@ function AssignmentRowActions({ row }: AssignmentRowActionsProps) {
                         to='/surveys/assignments/$assignmentId'
                         params={{ assignmentId: row.original.id }}
                     >
-                        Details
+                        {t('surveys.assignments.actions.details')}
                     </Link>
                 </DropdownMenuItem>
             </DropdownMenuContent>
@@ -95,6 +98,7 @@ function AssignmentRowActions({ row }: AssignmentRowActionsProps) {
 }
 
 export function SurveyAssignmentList() {
+    const { t } = useTranslation(['business', 'common'])
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -133,7 +137,7 @@ export function SurveyAssignmentList() {
                             (table.getIsSomePageRowsSelected() && 'indeterminate')
                         }
                         onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                        aria-label='Select all'
+                        aria-label={t('common:selection.selectAll')}
                         className='translate-y-[2px]'
                     />
                 ),
@@ -141,7 +145,7 @@ export function SurveyAssignmentList() {
                     <Checkbox
                         checked={row.getIsSelected()}
                         onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label='Select row'
+                        aria-label={t('common:selection.selectRow')}
                         className='translate-y-[2px]'
                     />
                 ),
@@ -151,7 +155,7 @@ export function SurveyAssignmentList() {
             {
                 accessorKey: 'id',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Assignment ID' />
+                    <DataTableColumnHeader column={column} title={t('surveys.assignments.columns.id')} />
                 ),
                 cell: ({ row }) => (
                     <LongText className='max-w-32 font-mono text-xs'>
@@ -163,13 +167,15 @@ export function SurveyAssignmentList() {
             {
                 accessorKey: 'statusLabel',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Status' />
+                    <DataTableColumnHeader column={column} title={t('surveys.assignments.columns.status')} />
                 ),
                 cell: ({ row }) => {
                     const status = row.getValue('statusLabel') as SurveyAssignmentRow['statusLabel']
                     return (
                         <Badge variant={status === 'completed' ? 'default' : 'secondary'}>
-                            {status === 'in_progress' ? 'In Progress' : 'Completed'}
+                            {status === 'in_progress'
+                                ? t('surveys.assignments.status.inProgress')
+                                : t('surveys.assignments.status.completed')}
                         </Badge>
                     )
                 },
@@ -179,14 +185,14 @@ export function SurveyAssignmentList() {
             {
                 accessorKey: 'progress',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Progress' />
+                    <DataTableColumnHeader column={column} title={t('surveys.assignments.columns.progress')} />
                 ),
                 cell: ({ row }) => <span>{row.getValue('progress')}</span>,
             },
             {
                 accessorKey: 'dueAtLabel',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Due Date' />
+                    <DataTableColumnHeader column={column} title={t('surveys.assignments.columns.dueDate')} />
                 ),
                 cell: ({ row }) => (
                     <span className='text-sm text-muted-foreground'>
@@ -197,14 +203,14 @@ export function SurveyAssignmentList() {
             {
                 id: 'actions',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Actions' />
+                    <DataTableColumnHeader column={column} title={t('surveys.assignments.columns.actions')} />
                 ),
                 cell: ({ row }) => <AssignmentRowActions row={row} />,
                 enableSorting: false,
                 enableHiding: false,
             },
         ],
-        []
+        [t]
     )
 
     const table = useReactTable({
@@ -242,13 +248,13 @@ export function SurveyAssignmentList() {
             <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
                 <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div>
-                        <h2 className='text-2xl font-bold tracking-tight'>Survey Assignments</h2>
-                        <p className='text-muted-foreground'>Track and manage survey assignments</p>
+                        <h2 className='text-2xl font-bold tracking-tight'>{t('surveys.assignments.title')}</h2>
+                        <p className='text-muted-foreground'>{t('surveys.assignments.description')}</p>
                     </div>
                     <Button asChild>
                         <Link to='/surveys/assignments/new'>
                             <Plus className='mr-2 h-4 w-4' />
-                            New Assignment
+                            {t('surveys.assignments.new')}
                         </Link>
                     </Button>
                 </div>
@@ -261,15 +267,15 @@ export function SurveyAssignmentList() {
                 >
                     <DataTableToolbar
                         table={table}
-                        searchPlaceholder='Filter assignments...'
+                        searchPlaceholder={t('surveys.assignments.filterPlaceholder')}
                         searchKey='id'
                         filters={[
                             {
                                 columnId: 'statusLabel',
-                                title: 'Status',
+                                title: t('surveys.assignments.columns.status'),
                                 options: [
-                                    { label: 'In Progress', value: 'in_progress' },
-                                    { label: 'Completed', value: 'completed' },
+                                    { label: t('surveys.assignments.status.inProgress'), value: 'in_progress' },
+                                    { label: t('surveys.assignments.status.completed'), value: 'completed' },
                                 ],
                             },
                         ]}
@@ -326,7 +332,7 @@ export function SurveyAssignmentList() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={columns.length} className='h-24 text-center'>
-                                            {isLoading ? 'Loading assignments...' : 'No results.'}
+                                            {isLoading ? t('surveys.assignments.loading') : t('surveys.assignments.noResults')}
                                         </TableCell>
                                     </TableRow>
                                 )}

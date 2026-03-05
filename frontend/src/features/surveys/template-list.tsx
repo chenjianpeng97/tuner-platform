@@ -16,6 +16,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfigDrawer } from '@/components/config-drawer'
@@ -73,6 +74,7 @@ function TemplateRowActions({
     onPublish,
     publishing,
 }: TemplateRowActionsProps) {
+    const { t } = useTranslation(['business', 'common'])
     const isDraft = row.original.statusLabel === 'draft'
 
     return (
@@ -83,7 +85,7 @@ function TemplateRowActions({
                     className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
                 >
                     <DotsHorizontalIcon className='h-4 w-4' />
-                    <span className='sr-only'>Open actions menu</span>
+                    <span className='sr-only'>{t('common:menu.openActionsMenu')}</span>
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align='end' className='w-[160px]'>
@@ -92,14 +94,14 @@ function TemplateRowActions({
                         to='/surveys/templates/$templateId/edit'
                         params={{ templateId: row.original.id }}
                     >
-                        Edit
+                        {t('surveys.templates.actions.edit')}
                     </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                     disabled={!isDraft || publishing}
                     onClick={() => onPublish(row.original.id)}
                 >
-                    Publish
+                    {t('surveys.templates.actions.publish')}
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
@@ -107,6 +109,7 @@ function TemplateRowActions({
 }
 
 export function SurveyTemplateList() {
+    const { t } = useTranslation(['business', 'common'])
     const queryClient = useQueryClient()
     const [rowSelection, setRowSelection] = useState({})
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -124,24 +127,27 @@ export function SurveyTemplateList() {
     const createMutation = useMutation({
         mutationFn: () =>
             createSurveyTemplate({
-                name: 'New Template',
+                name: t('surveys.templates.new'),
                 questions: [],
             }),
         onSuccess: () => {
-            toast.success('Template created')
+            toast.success(t('surveys.templates.createSuccess'))
             queryClient.invalidateQueries({ queryKey: ['surveys', 'templates'] })
         },
-        onError: () => toast.error('Failed to create template'),
+        onError: () => toast.error(t('surveys.templates.createFailed')),
     })
 
     const publishMutation = useMutation({
         mutationFn: (templateId: string) => publishSurveyTemplate(templateId),
         onSuccess: () => {
-            toast.success('Template published')
+            toast.success(t('surveys.templates.publishSuccess'))
             queryClient.invalidateQueries({ queryKey: ['surveys', 'templates'] })
         },
-        onError: () => toast.error('Failed to publish template'),
+        onError: () => toast.error(t('surveys.templates.publishFailed')),
     })
+
+    const publishTemplate = publishMutation.mutate
+    const isPublishing = publishMutation.isPending
 
     const rows = useMemo<SurveyTemplateRow[]>(
         () =>
@@ -185,7 +191,7 @@ export function SurveyTemplateList() {
             {
                 accessorKey: 'name',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Name' />
+                    <DataTableColumnHeader column={column} title={t('surveys.templates.columns.name')} />
                 ),
                 cell: ({ row }) => (
                     <LongText className='max-w-72'>{row.getValue('name')}</LongText>
@@ -195,13 +201,15 @@ export function SurveyTemplateList() {
             {
                 accessorKey: 'statusLabel',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Status' />
+                    <DataTableColumnHeader column={column} title={t('surveys.templates.columns.status')} />
                 ),
                 cell: ({ row }) => {
                     const status = row.getValue('statusLabel') as SurveyTemplateRow['statusLabel']
                     return (
                         <Badge variant={status === 'draft' ? 'outline' : 'default'}>
-                            {status === 'draft' ? 'Draft' : 'Published'}
+                            {status === 'draft'
+                                ? t('surveys.templates.status.draft')
+                                : t('surveys.templates.status.published')}
                         </Badge>
                     )
                 },
@@ -211,7 +219,7 @@ export function SurveyTemplateList() {
             {
                 accessorKey: 'version',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Version' />
+                    <DataTableColumnHeader column={column} title={t('surveys.templates.columns.version')} />
                 ),
                 cell: ({ row }) => (
                     <span className='font-mono text-xs'>{row.getValue('version')}</span>
@@ -220,20 +228,20 @@ export function SurveyTemplateList() {
             {
                 id: 'actions',
                 header: ({ column }) => (
-                    <DataTableColumnHeader column={column} title='Actions' />
+                    <DataTableColumnHeader column={column} title={t('surveys.templates.columns.actions')} />
                 ),
                 cell: ({ row }) => (
                     <TemplateRowActions
                         row={row}
-                        onPublish={(templateId) => publishMutation.mutate(templateId)}
-                        publishing={publishMutation.isPending}
+                        onPublish={publishTemplate}
+                        publishing={isPublishing}
                     />
                 ),
                 enableSorting: false,
                 enableHiding: false,
             },
         ],
-        [publishMutation]
+        [isPublishing, publishTemplate, t]
     )
 
     const table = useReactTable({
@@ -271,15 +279,15 @@ export function SurveyTemplateList() {
             <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
                 <div className='flex flex-wrap items-end justify-between gap-2'>
                     <div>
-                        <h2 className='text-2xl font-bold tracking-tight'>Survey Templates</h2>
-                        <p className='text-muted-foreground'>Manage and publish survey templates</p>
+                        <h2 className='text-2xl font-bold tracking-tight'>{t('surveys.templates.title')}</h2>
+                        <p className='text-muted-foreground'>{t('surveys.templates.description')}</p>
                     </div>
                     <Button
                         onClick={() => createMutation.mutate()}
                         disabled={createMutation.isPending}
                     >
                         <Plus className='mr-2 h-4 w-4' />
-                        New Template
+                        {t('surveys.templates.new')}
                     </Button>
                 </div>
 
@@ -291,15 +299,15 @@ export function SurveyTemplateList() {
                 >
                     <DataTableToolbar
                         table={table}
-                        searchPlaceholder='Filter templates...'
+                        searchPlaceholder={t('surveys.templates.filterPlaceholder')}
                         searchKey='name'
                         filters={[
                             {
                                 columnId: 'statusLabel',
-                                title: 'Status',
+                                title: t('surveys.templates.columns.status'),
                                 options: [
-                                    { label: 'Draft', value: 'draft' },
-                                    { label: 'Published', value: 'published' },
+                                    { label: t('surveys.templates.status.draft'), value: 'draft' },
+                                    { label: t('surveys.templates.status.published'), value: 'published' },
                                 ],
                             },
                         ]}
@@ -356,7 +364,7 @@ export function SurveyTemplateList() {
                                 ) : (
                                     <TableRow>
                                         <TableCell colSpan={columns.length} className='h-24 text-center'>
-                                            {isLoading ? 'Loading templates...' : 'No results.'}
+                                            {isLoading ? t('surveys.templates.loading') : t('surveys.templates.noResults')}
                                         </TableCell>
                                     </TableRow>
                                 )}

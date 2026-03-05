@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { logout } from '@/api/account'
 import { useAuthStore } from '@/stores/auth-store'
@@ -13,12 +14,13 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { auth } = useAuthStore()
+  const { t } = useTranslation('common')
 
   const handleSignOut = async () => {
     try {
       await logout()
     } catch {
-      toast.error('Logout request failed, local session cleared')
+      toast.error(t('signOut.requestFailed'))
     } finally {
       auth.reset()
       // Preserve current location for redirect after sign-in
@@ -35,9 +37,9 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      title='Sign out'
-      desc='Are you sure you want to sign out? You will need to sign in again to access your account.'
-      confirmText='Sign out'
+      title={t('signOut.title')}
+      desc={t('signOut.desc')}
+      confirmText={t('signOut.confirm')}
       destructive
       handleConfirm={handleSignOut}
       className='sm:max-w-sm'

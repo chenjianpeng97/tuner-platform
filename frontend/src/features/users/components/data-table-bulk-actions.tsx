@@ -1,5 +1,6 @@
 import { type Table } from '@tanstack/react-table'
 import { ShieldCheck, ShieldX, UserCheck, UserX } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -16,6 +17,7 @@ type DataTableBulkActionsProps = {
 }
 
 export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
+  const { t } = useTranslation('business')
   const { setUserActivation, setUserAdmin, refreshUsers } = useUsers()
   const selectedRows = table.getFilteredSelectedRowModel().rows
   const selectedUsers = selectedRows.map((row) => row.original)
@@ -33,35 +35,35 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
       }),
       {
         loading: `${label}...`,
-        success: `${label} completed`,
-        error: `${label} failed`,
+        success: t('users.bulk.completed', { label }),
+        error: t('users.bulk.failed', { label }),
       }
     )
   }
 
   const activateUsers = async () => {
-    await applyBulkAction('Activating users', async (user) => {
+    await applyBulkAction(t('users.bulk.activating'), async (user) => {
       if (user.isActive) return
       await setUserActivation({ userId: user.id, isActive: true })
     })
   }
 
   const deactivateUsers = async () => {
-    await applyBulkAction('Deactivating users', async (user) => {
+    await applyBulkAction(t('users.bulk.deactivating'), async (user) => {
       if (!user.isActive || user.role === 'super_admin') return
       await setUserActivation({ userId: user.id, isActive: false })
     })
   }
 
   const grantAdminForUsers = async () => {
-    await applyBulkAction('Granting admin', async (user) => {
+    await applyBulkAction(t('users.bulk.grantingAdmin'), async (user) => {
       if (user.role !== 'user') return
       await setUserAdmin({ userId: user.id, isAdmin: true })
     })
   }
 
   const revokeAdminForUsers = async () => {
-    await applyBulkAction('Revoking admin', async (user) => {
+    await applyBulkAction(t('users.bulk.revokingAdmin'), async (user) => {
       if (user.role !== 'admin') return
       await setUserAdmin({ userId: user.id, isAdmin: false })
     })
@@ -76,15 +78,15 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
             size='icon'
             onClick={activateUsers}
             className='size-8'
-            aria-label='Activate selected users'
-            title='Activate selected users'
+            aria-label={t('users.actions.activateSelected')}
+            title={t('users.actions.activateSelected')}
           >
             <UserCheck />
-            <span className='sr-only'>Activate selected users</span>
+            <span className='sr-only'>{t('users.actions.activateSelected')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Activate selected users</p>
+          <p>{t('users.actions.activateSelected')}</p>
         </TooltipContent>
       </Tooltip>
 
@@ -95,15 +97,15 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
             size='icon'
             onClick={deactivateUsers}
             className='size-8'
-            aria-label='Deactivate selected users'
-            title='Deactivate selected users'
+            aria-label={t('users.actions.deactivateSelected')}
+            title={t('users.actions.deactivateSelected')}
           >
             <UserX />
-            <span className='sr-only'>Deactivate selected users</span>
+            <span className='sr-only'>{t('users.actions.deactivateSelected')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Deactivate selected users</p>
+          <p>{t('users.actions.deactivateSelected')}</p>
         </TooltipContent>
       </Tooltip>
 
@@ -114,15 +116,15 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
             size='icon'
             onClick={grantAdminForUsers}
             className='size-8'
-            aria-label='Grant admin for selected users'
-            title='Grant admin for selected users'
+            aria-label={t('users.actions.grantAdminSelected')}
+            title={t('users.actions.grantAdminSelected')}
           >
             <ShieldCheck />
-            <span className='sr-only'>Grant admin for selected users</span>
+            <span className='sr-only'>{t('users.actions.grantAdminSelected')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Grant admin for selected users</p>
+          <p>{t('users.actions.grantAdminSelected')}</p>
         </TooltipContent>
       </Tooltip>
 
@@ -133,15 +135,15 @@ export function DataTableBulkActions({ table }: DataTableBulkActionsProps) {
             size='icon'
             onClick={revokeAdminForUsers}
             className='size-8'
-            aria-label='Revoke admin for selected users'
-            title='Revoke admin for selected users'
+            aria-label={t('users.actions.revokeAdminSelected')}
+            title={t('users.actions.revokeAdminSelected')}
           >
             <ShieldX />
-            <span className='sr-only'>Revoke admin for selected users</span>
+            <span className='sr-only'>{t('users.actions.revokeAdminSelected')}</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <p>Revoke admin for selected users</p>
+          <p>{t('users.actions.revokeAdminSelected')}</p>
         </TooltipContent>
       </Tooltip>
     </BulkActionsToolbar>

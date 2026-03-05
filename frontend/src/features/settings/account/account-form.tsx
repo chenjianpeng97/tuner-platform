@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { changePassword } from '@/api/account'
 import { Button } from '@/components/ui/button'
@@ -14,22 +15,26 @@ import {
 } from '@/components/ui/form'
 import { PasswordInput } from '@/components/password-input'
 
-const accountPasswordSchema = z
-  .object({
-    current_password: z.string().min(1, 'Please enter your current password'),
-    new_password: z.string().min(7, 'New password must be at least 7 characters'),
-    confirmPassword: z.string().min(1, 'Please confirm your new password'),
-  })
-  .refine((data) => data.new_password === data.confirmPassword, {
-    message: "Passwords don't match.",
-    path: ['confirmPassword'],
-  })
+function createAccountPasswordSchema(t: (key: string) => string) {
+  return z
+    .object({
+      current_password: z.string().min(1, t('account.validation.currentRequired')),
+      new_password: z.string().min(7, t('account.validation.newMin7')),
+      confirmPassword: z.string().min(1, t('account.validation.confirmRequired')),
+    })
+    .refine((data) => data.new_password === data.confirmPassword, {
+      message: t('account.validation.mismatch'),
+      path: ['confirmPassword'],
+    })
+}
 
-type AccountPasswordValues = z.infer<typeof accountPasswordSchema>
+type AccountPasswordValues = z.infer<ReturnType<typeof createAccountPasswordSchema>>
 
 export function AccountForm() {
+  const { t } = useTranslation('business')
+
   const form = useForm<AccountPasswordValues>({
-    resolver: zodResolver(accountPasswordSchema),
+    resolver: zodResolver(createAccountPasswordSchema(t)),
     defaultValues: {
       current_password: '',
       new_password: '',
@@ -43,10 +48,10 @@ export function AccountForm() {
         current_password: data.current_password,
         new_password: data.new_password,
       })
-      toast.success('Password changed')
+      toast.success(t('account.changed'))
       form.reset()
     } catch {
-      toast.error('Change password failed')
+      toast.error(t('account.changeFailed'))
     }
   }
 
@@ -58,7 +63,7 @@ export function AccountForm() {
           name='current_password'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Current Password</FormLabel>
+              <FormLabel>{t('account.currentPassword')}</FormLabel>
               <FormControl>
                 <PasswordInput placeholder='******' {...field} />
               </FormControl>
@@ -71,7 +76,7 @@ export function AccountForm() {
           name='new_password'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>New Password</FormLabel>
+              <FormLabel>{t('account.newPassword')}</FormLabel>
               <FormControl>
                 <PasswordInput placeholder='******' {...field} />
               </FormControl>
@@ -84,7 +89,7 @@ export function AccountForm() {
           name='confirmPassword'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Confirm Password</FormLabel>
+              <FormLabel>{t('account.confirmPassword')}</FormLabel>
               <FormControl>
                 <PasswordInput placeholder='******' {...field} />
               </FormControl>
@@ -92,7 +97,7 @@ export function AccountForm() {
             </FormItem>
           )}
         />
-        <Button type='submit'>Change Password</Button>
+        <Button type='submit'>{t('account.submit')}</Button>
       </form>
     </Form>
   )

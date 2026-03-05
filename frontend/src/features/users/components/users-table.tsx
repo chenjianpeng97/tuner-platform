@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   type VisibilityState,
   flexRender,
@@ -8,6 +8,7 @@ import {
   getFilteredRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 import { useTableUrlState } from '@/hooks/use-table-url-state'
 import { useUsers } from './users-provider'
@@ -20,11 +21,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { roles } from '../data/data'
+import { getRoles } from '../data/data'
 import { DataTableBulkActions } from './data-table-bulk-actions'
-import { usersColumns as columns } from './users-columns'
+import { getUsersColumns } from './users-columns'
 
 export function UsersTable() {
+  const { t } = useTranslation(['business', 'common'])
   const { search, navigate, rows, pageCount, loading } = useUsers()
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
@@ -53,6 +55,9 @@ export function UsersTable() {
       { columnId: 'role', searchKey: 'role', type: 'array' },
     ],
   })
+
+  const roles = useMemo(() => getRoles(t), [t])
+  const columns = useMemo(() => getUsersColumns(t), [t])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -90,20 +95,20 @@ export function UsersTable() {
     >
       <DataTableToolbar
         table={table}
-        searchPlaceholder='Filter users...'
+        searchPlaceholder={t('users.filterPlaceholder')}
         searchKey='username'
         filters={[
           {
             columnId: 'statusLabel',
-            title: 'Status',
+            title: t('users.columns.status'),
             options: [
-              { label: 'Active', value: 'active' },
-              { label: 'Inactive', value: 'inactive' },
+              { label: t('users.status.active'), value: 'active' },
+              { label: t('users.status.inactive'), value: 'inactive' },
             ],
           },
           {
             columnId: 'role',
-            title: 'Role',
+            title: t('users.columns.role'),
             options: roles.map((role) => ({ ...role })),
           },
         ]}
@@ -167,7 +172,7 @@ export function UsersTable() {
                   colSpan={columns.length}
                   className='h-24 text-center'
                 >
-                  {loading ? 'Loading users...' : 'No results.'}
+                  {loading ? t('users.loading') : t('users.noResults')}
                 </TableCell>
               </TableRow>
             )}

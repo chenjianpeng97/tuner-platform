@@ -1,11 +1,14 @@
+import { useTranslation } from 'react-i18next'
 import { ContentSection } from '../components/content-section'
 import { AccountForm } from './account-form'
 
 export function SettingsAccount() {
+  const { t } = useTranslation('business')
+
   return (
     <ContentSection
-      title='Account'
-      desc='Manage account security with contract-driven password update.'
+      title={t('account.title')}
+      desc={t('account.description')}
     >
       <AccountForm />
     </ContentSection>

@@ -1,4 +1,5 @@
 import { useLayout } from '@/context/layout-provider'
+import { useTranslation } from 'react-i18next'
 import {
   Sidebar,
   SidebarContent,
@@ -7,13 +8,16 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar'
 // import { AppTitle } from './app-title'
-import { sidebarData } from './data/sidebar-data'
+import { getSidebarData } from './data/sidebar-data'
 import { NavGroup } from './nav-group'
 import { NavUser } from './nav-user'
 import { TeamSwitcher } from './team-switcher'
 
 export function AppSidebar() {
+  const { t } = useTranslation('common')
   const { collapsible, variant } = useLayout()
+  const sidebarData = getSidebarData(t)
+
   return (
     <Sidebar collapsible={collapsible} variant={variant}>
       <SidebarHeader>

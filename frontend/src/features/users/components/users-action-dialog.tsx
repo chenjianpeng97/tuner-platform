@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import {
@@ -25,66 +26,68 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { roles } from '../data/data'
+import { getRoles } from '../data/data'
 import { type UsersRowViewModel } from '../model'
 import { useUsers } from './users-provider'
 
-const formSchema = z
-  .object({
-    username: z.string().min(1, 'Username is required.'),
-    role: z.enum(['super_admin', 'admin', 'user']),
-    password: z.string().optional(),
-    confirmPassword: z.string().optional(),
-    isEdit: z.boolean(),
-  })
-  .superRefine((data, ctx) => {
-    const password = data.password?.trim() ?? ''
-    const confirmPassword = data.confirmPassword?.trim() ?? ''
+function createFormSchema(t: (key: string) => string) {
+  return z
+    .object({
+      username: z.string().min(1, t('users.dialog.validation.usernameRequired')),
+      role: z.enum(['super_admin', 'admin', 'user']),
+      password: z.string().optional(),
+      confirmPassword: z.string().optional(),
+      isEdit: z.boolean(),
+    })
+    .superRefine((data, ctx) => {
+      const password = data.password?.trim() ?? ''
+      const confirmPassword = data.confirmPassword?.trim() ?? ''
 
-    if (!data.isEdit) {
-      if (password.length < 8) {
+      if (!data.isEdit) {
+        if (password.length < 8) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: t('users.dialog.validation.passwordMin8'),
+            path: ['password'],
+          })
+        }
+      }
+
+      if (password.length > 0 && password.length < 8) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'Password must be at least 8 characters long.',
+          message: t('users.dialog.validation.passwordMin8'),
           path: ['password'],
         })
       }
-    }
 
-    if (password.length > 0 && password.length < 8) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Password must be at least 8 characters long.',
-        path: ['password'],
-      })
-    }
+      if (password.length > 0 && !/[a-z]/.test(password)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t('users.dialog.validation.passwordLowercase'),
+          path: ['password'],
+        })
+      }
 
-    if (password.length > 0 && !/[a-z]/.test(password)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Password must contain at least one lowercase letter.',
-        path: ['password'],
-      })
-    }
+      if (password.length > 0 && !/\d/.test(password)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t('users.dialog.validation.passwordNumber'),
+          path: ['password'],
+        })
+      }
 
-    if (password.length > 0 && !/\d/.test(password)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Password must contain at least one number.',
-        path: ['password'],
-      })
-    }
+      if (password !== confirmPassword) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t('users.dialog.validation.passwordsMismatch'),
+          path: ['confirmPassword'],
+        })
+      }
+    })
+}
 
-    if (password !== confirmPassword) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Passwords don't match.",
-        path: ['confirmPassword'],
-      })
-    }
-  })
-
-type UserForm = z.infer<typeof formSchema>
+type UserForm = z.infer<ReturnType<typeof createFormSchema>>
 
 type UserActionDialogProps = {
   currentRow?: UsersRowViewModel
@@ -108,8 +111,10 @@ export function UsersActionDialog({
   open,
   onOpenChange,
 }: UserActionDialogProps) {
+  const { t } = useTranslation('business')
   const isEdit = !!currentRow
   const { createUser, setPassword, setUserAdmin } = useUsers()
+  const roles = getRoles(t)
   const roleItems = isEdit
     ? currentRow?.role === 'super_admin'
       ? roles.filter((role) => role.value === 'super_admin')
@@ -117,7 +122,7 @@ export function UsersActionDialog({
     : roles
 
   const form = useForm<UserForm>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createFormSchema(t)),
     defaultValues: toDefaultValues(currentRow),
   })
 
@@ -136,9 +141,9 @@ export function UsersActionDialog({
           role: values.role,
         }),
         {
-          loading: 'Creating user...',
-          success: 'User created',
-          error: 'Failed to create user',
+          loading: t('users.dialog.creatingUser'),
+          success: t('users.dialog.userCreated'),
+          error: t('users.dialog.createUserFailed'),
         }
       )
       onOpenChange(false)
@@ -159,15 +164,15 @@ export function UsersActionDialog({
     }
 
     if (jobs.length === 0) {
-      toast.info('No changes to apply')
+      toast.info(t('users.dialog.noChanges'))
       onOpenChange(false)
       return
     }
 
     await toast.promise(Promise.all(jobs), {
-      loading: 'Updating user...',
-      success: 'User updated',
-      error: 'Failed to update user',
+      loading: t('users.dialog.updatingUser'),
+      success: t('users.dialog.userUpdated'),
+      error: t('users.dialog.updateUserFailed'),
     })
     onOpenChange(false)
   }
@@ -182,11 +187,13 @@ export function UsersActionDialog({
     >
       <DialogContent className='sm:max-w-lg'>
         <DialogHeader className='text-start'>
-          <DialogTitle>{isEdit ? 'Edit User' : 'Add New User'}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('users.dialog.editTitle') : t('users.dialog.addTitle')}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? 'Update role or reset password for this user.'
-              : 'Create a new user account.'}
+              ? t('users.dialog.editDescription')
+              : t('users.dialog.addDescription')}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -200,7 +207,7 @@ export function UsersActionDialog({
               name='username'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Username</FormLabel>
+                  <FormLabel>{t('users.dialog.username')}</FormLabel>
                   <FormControl>
                     <Input
                       placeholder='john_doe'
@@ -218,12 +225,12 @@ export function UsersActionDialog({
               name='role'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Role</FormLabel>
+                  <FormLabel>{t('users.dialog.role')}</FormLabel>
                   <SelectDropdown
                     defaultValue={field.value}
                     onValueChange={field.onChange}
                     isControlled
-                    placeholder='Select a role'
+                    placeholder={t('users.dialog.selectRole')}
                     items={roleItems.map(({ label, value }) => ({
                       label,
                       value,
@@ -240,11 +247,13 @@ export function UsersActionDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>
-                    {isEdit ? 'New Password (optional)' : 'Password'}
+                    {isEdit
+                      ? t('users.dialog.newPasswordOptional')
+                      : t('users.dialog.password')}
                   </FormLabel>
                   <FormControl>
                     <PasswordInput
-                      placeholder='At least 8 chars, with lowercase and number'
+                      placeholder={t('users.dialog.passwordPlaceholder')}
                       {...field}
                     />
                   </FormControl>
@@ -257,10 +266,10 @@ export function UsersActionDialog({
               name='confirmPassword'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
+                  <FormLabel>{t('users.dialog.confirmPassword')}</FormLabel>
                   <FormControl>
                     <PasswordInput
-                      placeholder='Repeat password'
+                      placeholder={t('users.dialog.confirmPasswordPlaceholder')}
                       {...field}
                     />
                   </FormControl>
@@ -272,7 +281,7 @@ export function UsersActionDialog({
         </Form>
         <DialogFooter>
           <Button type='submit' form='user-form'>
-            {isEdit ? 'Save changes' : 'Create user'}
+            {isEdit ? t('users.dialog.saveChanges') : t('users.dialog.createUser')}
           </Button>
         </DialogFooter>
       </DialogContent>
