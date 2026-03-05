@@ -40,6 +40,13 @@ import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_auth
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedSurveysTemplatesIndexRouteImport } from './routes/_authenticated/surveys/templates/index'
+import { Route as AuthenticatedSurveysAssignmentsIndexRouteImport } from './routes/_authenticated/surveys/assignments/index'
+import { Route as AuthenticatedSurveysAssignmentsNewRouteImport } from './routes/_authenticated/surveys/assignments/new'
+import { Route as AuthenticatedSurveysAssignmentsAssignmentIdIndexRouteImport } from './routes/_authenticated/surveys/assignments/$assignmentId/index'
+import { Route as AuthenticatedSurveysTemplatesTemplateIdEditRouteImport } from './routes/_authenticated/surveys/templates/$templateId/edit'
+import { Route as AuthenticatedSurveysAssignmentsAssignmentIdResultsRouteImport } from './routes/_authenticated/surveys/assignments/$assignmentId/results'
+import { Route as AuthenticatedSurveysAssignmentsAssignmentIdFillRouteImport } from './routes/_authenticated/surveys/assignments/$assignmentId/fill'
 
 const ClerkRouteRoute = ClerkRouteRouteImport.update({
   id: '/clerk',
@@ -203,6 +210,48 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSurveysTemplatesIndexRoute =
+  AuthenticatedSurveysTemplatesIndexRouteImport.update({
+    id: '/surveys/templates/',
+    path: '/surveys/templates/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSurveysAssignmentsIndexRoute =
+  AuthenticatedSurveysAssignmentsIndexRouteImport.update({
+    id: '/surveys/assignments/',
+    path: '/surveys/assignments/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSurveysAssignmentsNewRoute =
+  AuthenticatedSurveysAssignmentsNewRouteImport.update({
+    id: '/surveys/assignments/new',
+    path: '/surveys/assignments/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute =
+  AuthenticatedSurveysAssignmentsAssignmentIdIndexRouteImport.update({
+    id: '/surveys/assignments/$assignmentId/',
+    path: '/surveys/assignments/$assignmentId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSurveysTemplatesTemplateIdEditRoute =
+  AuthenticatedSurveysTemplatesTemplateIdEditRouteImport.update({
+    id: '/surveys/templates/$templateId/edit',
+    path: '/surveys/templates/$templateId/edit',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute =
+  AuthenticatedSurveysAssignmentsAssignmentIdResultsRouteImport.update({
+    id: '/surveys/assignments/$assignmentId/results',
+    path: '/surveys/assignments/$assignmentId/results',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSurveysAssignmentsAssignmentIdFillRoute =
+  AuthenticatedSurveysAssignmentsAssignmentIdFillRouteImport.update({
+    id: '/surveys/assignments/$assignmentId/fill',
+    path: '/surveys/assignments/$assignmentId/fill',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -233,6 +282,13 @@ export interface FileRoutesByFullPath {
   '/survey-forms': typeof AuthenticatedSurveyFormsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/surveys/assignments/new': typeof AuthenticatedSurveysAssignmentsNewRoute
+  '/surveys/assignments': typeof AuthenticatedSurveysAssignmentsIndexRoute
+  '/surveys/templates': typeof AuthenticatedSurveysTemplatesIndexRoute
+  '/surveys/assignments/$assignmentId/fill': typeof AuthenticatedSurveysAssignmentsAssignmentIdFillRoute
+  '/surveys/assignments/$assignmentId/results': typeof AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute
+  '/surveys/templates/$templateId/edit': typeof AuthenticatedSurveysTemplatesTemplateIdEditRoute
+  '/surveys/assignments/$assignmentId': typeof AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/clerk': typeof ClerkAuthenticatedRouteRouteWithChildren
@@ -262,6 +318,13 @@ export interface FileRoutesByTo {
   '/survey-forms': typeof AuthenticatedSurveyFormsIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
   '/users': typeof AuthenticatedUsersIndexRoute
+  '/surveys/assignments/new': typeof AuthenticatedSurveysAssignmentsNewRoute
+  '/surveys/assignments': typeof AuthenticatedSurveysAssignmentsIndexRoute
+  '/surveys/templates': typeof AuthenticatedSurveysTemplatesIndexRoute
+  '/surveys/assignments/$assignmentId/fill': typeof AuthenticatedSurveysAssignmentsAssignmentIdFillRoute
+  '/surveys/assignments/$assignmentId/results': typeof AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute
+  '/surveys/templates/$templateId/edit': typeof AuthenticatedSurveysTemplatesTemplateIdEditRoute
+  '/surveys/assignments/$assignmentId': typeof AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -296,6 +359,13 @@ export interface FileRoutesById {
   '/_authenticated/survey-forms/': typeof AuthenticatedSurveyFormsIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
+  '/_authenticated/surveys/assignments/new': typeof AuthenticatedSurveysAssignmentsNewRoute
+  '/_authenticated/surveys/assignments/': typeof AuthenticatedSurveysAssignmentsIndexRoute
+  '/_authenticated/surveys/templates/': typeof AuthenticatedSurveysTemplatesIndexRoute
+  '/_authenticated/surveys/assignments/$assignmentId/fill': typeof AuthenticatedSurveysAssignmentsAssignmentIdFillRoute
+  '/_authenticated/surveys/assignments/$assignmentId/results': typeof AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute
+  '/_authenticated/surveys/templates/$templateId/edit': typeof AuthenticatedSurveysTemplatesTemplateIdEditRoute
+  '/_authenticated/surveys/assignments/$assignmentId/': typeof AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -328,6 +398,13 @@ export interface FileRouteTypes {
     | '/survey-forms'
     | '/tasks'
     | '/users'
+    | '/surveys/assignments/new'
+    | '/surveys/assignments'
+    | '/surveys/templates'
+    | '/surveys/assignments/$assignmentId/fill'
+    | '/surveys/assignments/$assignmentId/results'
+    | '/surveys/templates/$templateId/edit'
+    | '/surveys/assignments/$assignmentId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/clerk'
@@ -357,6 +434,13 @@ export interface FileRouteTypes {
     | '/survey-forms'
     | '/tasks'
     | '/users'
+    | '/surveys/assignments/new'
+    | '/surveys/assignments'
+    | '/surveys/templates'
+    | '/surveys/assignments/$assignmentId/fill'
+    | '/surveys/assignments/$assignmentId/results'
+    | '/surveys/templates/$templateId/edit'
+    | '/surveys/assignments/$assignmentId'
   id:
     | '__root__'
     | '/_authenticated'
@@ -390,6 +474,13 @@ export interface FileRouteTypes {
     | '/_authenticated/survey-forms/'
     | '/_authenticated/tasks/'
     | '/_authenticated/users/'
+    | '/_authenticated/surveys/assignments/new'
+    | '/_authenticated/surveys/assignments/'
+    | '/_authenticated/surveys/templates/'
+    | '/_authenticated/surveys/assignments/$assignmentId/fill'
+    | '/_authenticated/surveys/assignments/$assignmentId/results'
+    | '/_authenticated/surveys/templates/$templateId/edit'
+    | '/_authenticated/surveys/assignments/$assignmentId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -626,6 +717,55 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/surveys/templates/': {
+      id: '/_authenticated/surveys/templates/'
+      path: '/surveys/templates'
+      fullPath: '/surveys/templates'
+      preLoaderRoute: typeof AuthenticatedSurveysTemplatesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/surveys/assignments/': {
+      id: '/_authenticated/surveys/assignments/'
+      path: '/surveys/assignments'
+      fullPath: '/surveys/assignments'
+      preLoaderRoute: typeof AuthenticatedSurveysAssignmentsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/surveys/assignments/new': {
+      id: '/_authenticated/surveys/assignments/new'
+      path: '/surveys/assignments/new'
+      fullPath: '/surveys/assignments/new'
+      preLoaderRoute: typeof AuthenticatedSurveysAssignmentsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/surveys/assignments/$assignmentId/': {
+      id: '/_authenticated/surveys/assignments/$assignmentId/'
+      path: '/surveys/assignments/$assignmentId'
+      fullPath: '/surveys/assignments/$assignmentId'
+      preLoaderRoute: typeof AuthenticatedSurveysAssignmentsAssignmentIdIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/surveys/templates/$templateId/edit': {
+      id: '/_authenticated/surveys/templates/$templateId/edit'
+      path: '/surveys/templates/$templateId/edit'
+      fullPath: '/surveys/templates/$templateId/edit'
+      preLoaderRoute: typeof AuthenticatedSurveysTemplatesTemplateIdEditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/surveys/assignments/$assignmentId/results': {
+      id: '/_authenticated/surveys/assignments/$assignmentId/results'
+      path: '/surveys/assignments/$assignmentId/results'
+      fullPath: '/surveys/assignments/$assignmentId/results'
+      preLoaderRoute: typeof AuthenticatedSurveysAssignmentsAssignmentIdResultsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/surveys/assignments/$assignmentId/fill': {
+      id: '/_authenticated/surveys/assignments/$assignmentId/fill'
+      path: '/surveys/assignments/$assignmentId/fill'
+      fullPath: '/surveys/assignments/$assignmentId/fill'
+      preLoaderRoute: typeof AuthenticatedSurveysAssignmentsAssignmentIdFillRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -662,6 +802,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSurveyFormsIndexRoute: typeof AuthenticatedSurveyFormsIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
+  AuthenticatedSurveysAssignmentsNewRoute: typeof AuthenticatedSurveysAssignmentsNewRoute
+  AuthenticatedSurveysAssignmentsIndexRoute: typeof AuthenticatedSurveysAssignmentsIndexRoute
+  AuthenticatedSurveysTemplatesIndexRoute: typeof AuthenticatedSurveysTemplatesIndexRoute
+  AuthenticatedSurveysAssignmentsAssignmentIdFillRoute: typeof AuthenticatedSurveysAssignmentsAssignmentIdFillRoute
+  AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute: typeof AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute
+  AuthenticatedSurveysTemplatesTemplateIdEditRoute: typeof AuthenticatedSurveysTemplatesTemplateIdEditRoute
+  AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute: typeof AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -674,6 +821,20 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSurveyFormsIndexRoute: AuthenticatedSurveyFormsIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
+  AuthenticatedSurveysAssignmentsNewRoute:
+    AuthenticatedSurveysAssignmentsNewRoute,
+  AuthenticatedSurveysAssignmentsIndexRoute:
+    AuthenticatedSurveysAssignmentsIndexRoute,
+  AuthenticatedSurveysTemplatesIndexRoute:
+    AuthenticatedSurveysTemplatesIndexRoute,
+  AuthenticatedSurveysAssignmentsAssignmentIdFillRoute:
+    AuthenticatedSurveysAssignmentsAssignmentIdFillRoute,
+  AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute:
+    AuthenticatedSurveysAssignmentsAssignmentIdResultsRoute,
+  AuthenticatedSurveysTemplatesTemplateIdEditRoute:
+    AuthenticatedSurveysTemplatesTemplateIdEditRoute,
+  AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute:
+    AuthenticatedSurveysAssignmentsAssignmentIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
