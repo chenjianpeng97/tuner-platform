@@ -5,6 +5,7 @@ on:
     paths:
       - "backend/**"
       - "features/**"
+      - "frontend/**"
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/python-uv-ci.yml"
@@ -12,6 +13,7 @@ on:
     paths:
       - "backend/**"
       - "features/**"
+      - "frontend/**"
       - "pyproject.toml"
       - "uv.lock"
       - ".github/workflows/python-uv-ci.yml"
@@ -37,7 +39,25 @@ jobs:
         with:
           python-version: "3.13"
       - run: uv sync --group bdd
-      - run: uv run --group bdd behave features
+      - run: uv run --group bdd behave --stage http --tags http features
+
+  bdd-ui-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: pnpm/action-setup@v4
+      - run: uv sync --group bdd
+      - run: uv run --group bdd python -m playwright install --with-deps chromium
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
 
   skills-check:
     runs-on: ubuntu-latest

@@ -6,6 +6,7 @@ import {
   Bug,
   ListTodo,
   FileX,
+  FileText,
   HelpCircle,
   Lock,
   Bell,
@@ -54,9 +55,20 @@ export const sidebarData: SidebarData = {
       title: 'Business',
       items: [
         {
-          title: 'Survey Forms',
-          url: '/survey-forms',
+          title: 'Survey',
           icon: ClipboardList,
+          items: [
+            {
+              title: 'Templates',
+              url: '/surveys/templates',
+              icon: FileText,
+            },
+            {
+              title: 'Assignments',
+              url: '/surveys/assignments',
+              icon: ClipboardList,
+            },
+          ],
         },
         {
           title: 'Users',

@@ -48,6 +48,8 @@ uv run --project backend pytest
 # BDD
 uv sync --group bdd
 uv run --group bdd behave features
+uv run --group bdd python -m playwright install chromium
+uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
 
 # Skills 脚本
 uv sync --group skills

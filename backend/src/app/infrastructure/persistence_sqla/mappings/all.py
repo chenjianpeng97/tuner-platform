@@ -24,9 +24,11 @@ during database migrations.
 from app.infrastructure.persistence_sqla.mappings.auth_session import (
     map_auth_sessions_table,
 )
+from app.infrastructure.persistence_sqla.mappings.survey import map_survey_tables
 from app.infrastructure.persistence_sqla.mappings.user import map_users_table
 
 
 def map_tables() -> None:
     map_users_table()
     map_auth_sessions_table()
+    map_survey_tables()
