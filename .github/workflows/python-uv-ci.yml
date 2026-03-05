@@ -30,7 +30,7 @@ jobs:
       - run: uv sync --project backend --group test
       - run: uv run --project backend pytest
 
-  bdd-test:
+  bdd-http-mock-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +39,19 @@ jobs:
         with:
           python-version: "3.13"
       - run: uv sync --group bdd
-      - run: uv run --group bdd behave --stage http --tags http features
+      - run: BDD_HTTP_MODE=mock uv run --group bdd behave --stage http --tags http features
+
+  bdd-http-real-test:
+    if: ${{ vars.ENABLE_BDD_HTTP_REAL == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: uv sync --group bdd
+      - run: BDD_HTTP_MODE=real APP_ENV=local uv run --group bdd behave --stage http --tags http features
 
   bdd-ui-test:
     runs-on: ubuntu-latest
@@ -57,7 +69,7 @@ jobs:
       - run: uv run --group bdd python -m playwright install --with-deps chromium
       - run: pnpm install --frozen-lockfile
         working-directory: frontend
-      - run: uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
+      - run: BDD_UI_MODE=mock uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
 
   skills-check:
     runs-on: ubuntu-latest

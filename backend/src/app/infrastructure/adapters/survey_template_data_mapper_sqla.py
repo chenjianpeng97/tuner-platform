@@ -52,6 +52,7 @@ class SqlaSurveyTemplateDataMapper(SurveyTemplateCommandGateway):
         draft_version_model = SurveyTemplateVersionModel()
         draft_version_model.id = uuid4()
         draft_version_model.template_id = template.id_.value
+        draft_version_model.template = template_model
         draft_version_model.version = 0
         draft_version_model.is_published = False
         draft_version_model.created_at = created_at
@@ -61,6 +62,7 @@ class SqlaSurveyTemplateDataMapper(SurveyTemplateCommandGateway):
             question_model = SurveyTemplateQuestionModel()
             question_model.id = uuid4()
             question_model.template_version_id = draft_version_model.id
+            question_model.template_version = draft_version_model
             question_model.key = question.key
             question_model.title = question.title
             question_model.question_type = question.question_type
@@ -72,6 +74,7 @@ class SqlaSurveyTemplateDataMapper(SurveyTemplateCommandGateway):
                 option_model = SurveyTemplateQuestionOptionModel()
                 option_model.id = uuid4()
                 option_model.question_id = question_model.id
+                option_model.question = question_model
                 option_model.value = option
                 option_model.label = option
                 option_model.order_no = option_order
@@ -183,6 +186,7 @@ class SqlaSurveyTemplateDataMapper(SurveyTemplateCommandGateway):
                     option_model = SurveyTemplateQuestionOptionModel()
                     option_model.id = uuid4()
                     option_model.question_id = question_model.id
+                    option_model.question = question_model
                     option_model.value = option
                     option_model.label = option
                     option_model.order_no = option_order
@@ -235,6 +239,7 @@ class SqlaSurveyTemplateDataMapper(SurveyTemplateCommandGateway):
             question_model = SurveyTemplateQuestionModel()
             question_model.id = uuid4()
             question_model.template_version_id = template_version.id_.value
+            question_model.template_version = version_model
             question_model.key = question.key
             question_model.title = question.title
             question_model.question_type = question.question_type
@@ -246,6 +251,7 @@ class SqlaSurveyTemplateDataMapper(SurveyTemplateCommandGateway):
                 option_model = SurveyTemplateQuestionOptionModel()
                 option_model.id = uuid4()
                 option_model.question_id = question_model.id
+                option_model.question = question_model
                 option_model.value = option
                 option_model.label = option
                 option_model.order_no = option_order

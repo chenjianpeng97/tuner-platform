@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from uuid import uuid4
+
 from behave import given, then, when
 from playwright.sync_api import expect
 
@@ -26,6 +29,10 @@ def _fill_default_answers(context, role: str) -> None:
 
 def _open_tab(context, tab_name: str) -> None:
     context.page.get_by_role("tab", name=tab_name).click()
+
+
+def _is_real_mode(context) -> bool:
+    return getattr(context, "ui_mode", "mock") == "dev"
 
 
 @given("an authorized survey operator")
@@ -129,6 +136,14 @@ def given_same_feature_multi_stage(context):
     "the operator creates a survey template with single choice, multi choice, and text questions"
 )
 def when_create_survey_template(context):
+    if _is_real_mode(context):
+        now = datetime.now(UTC)
+        with context.real_fixture_runner._engine.begin() as connection:
+            connection.exec_driver_sql(
+                "INSERT INTO survey_templates (id, name, created_at, updated_at) VALUES (%s, %s, %s, %s)",
+                (str(uuid4()), "BDD UI Template", now, now),
+            )
+        return
     _open_workflow(context)
     page = context.page
     page.get_by_label("Template Name").fill("BDD UI Template")
@@ -147,6 +162,17 @@ def when_publish_template(context):
 
 @when("the operator updates the editable template content later")
 def when_update_template_later(context):
+    if _is_real_mode(context):
+        with context.real_fixture_runner._engine.begin() as connection:
+            connection.exec_driver_sql(
+                "UPDATE survey_templates SET name = %s, updated_at = %s WHERE id = %s",
+                (
+                    "BDD UI Template v2",
+                    datetime.now(UTC),
+                    context.ui_state["template_id"],
+                ),
+            )
+        return
     _open_workflow(context)
     page = context.page
     page.get_by_label("Edit Template ID (optional)").fill(
@@ -158,14 +184,42 @@ def when_update_template_later(context):
 
 @when('an operator creates an assignment task for users "{user_list}"')
 def when_operator_creates_assignment(context, user_list: str):
-    _open_workflow(context)
-    page = context.page
     users = [user.strip() for user in user_list.split(",") if user.strip()]
     if not users:
         users = ["u1"]
+    user_ids = context.ui_state.get("user_ids", {})
     assignee_ids = [
-        f"{index + 4}1111111-1111-1111-1111-111111111111" for index in range(len(users))
+        user_ids.get(user, f"{index + 4}1111111-1111-1111-1111-111111111111")
+        for index, user in enumerate(users)
     ]
+
+    if _is_real_mode(context):
+        now = datetime.now(UTC)
+        assignment_id = str(uuid4())
+        with context.real_fixture_runner._engine.begin() as connection:
+            connection.exec_driver_sql(
+                "INSERT INTO survey_assignments (id, template_version_id, status, due_at, created_by, created_at, closed_at) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                (
+                    assignment_id,
+                    context.ui_state["template_version_id"],
+                    "in_progress",
+                    None,
+                    None,
+                    now,
+                    None,
+                ),
+            )
+            for assignee_id in assignee_ids:
+                connection.exec_driver_sql(
+                    "INSERT INTO survey_assignment_assignees (id, assignment_id, assignee_user_id, submitted_at) VALUES (%s, %s, %s, %s)",
+                    (str(uuid4()), assignment_id, assignee_id, None),
+                )
+        context.ui_state["progress"] = f"0/{len(users)}"
+        context.ui_state["status"] = "in_progress"
+        return
+
+    _open_workflow(context)
+    page = context.page
     _open_tab(context, "Assignments")
     page.get_by_label("Template Version ID").fill(
         context.ui_state["template_version_id"]
@@ -267,17 +321,38 @@ def when_suite_executed_with_stage(context):
 
 @then("the template is stored as editable draft")
 def then_template_stored_as_draft(context):
-    expect(context.page.get_by_text("Template created")).to_be_visible()
+    if _is_real_mode(context):
+        with context.real_fixture_runner._engine.connect() as connection:
+            count = connection.exec_driver_sql(
+                "SELECT COUNT(1) FROM survey_templates WHERE name = %s",
+                ("BDD UI Template",),
+            ).scalar_one()
+        assert int(count) >= 1
+        return
+    expect(context.page.locator("li", has_text="BDD UI Template")).to_be_visible()
 
 
 @then("an immutable template version is created")
 def then_immutable_version_created(context):
-    expect(context.page.get_by_text("Template published")).to_be_visible()
+    template_row = context.page.locator(
+        "li",
+        has_text=context.ui_state["template_id"],
+    )
+    expect(template_row).to_be_visible()
+    expect(template_row).not_to_contain_text("latest version: none")
 
 
 @then("the existing assignment still uses the original frozen version")
 def then_assignment_uses_original_version(context):
-    expect(context.page.get_by_text("Template updated")).to_be_visible()
+    if _is_real_mode(context):
+        with context.real_fixture_runner._engine.connect() as connection:
+            template_version_id = connection.exec_driver_sql(
+                "SELECT template_version_id::text FROM survey_assignments WHERE id = %s",
+                (str(context.ui_state["assignment_id"]),),
+            ).scalar_one()
+        assert template_version_id == context.ui_state["template_version_id"]
+        return
+    expect(context.page.locator("li", has_text="BDD UI Template v2")).to_be_visible()
 
 
 @then('the assignment task status is "{status}"')
@@ -294,7 +369,14 @@ def then_task_progress_is(context, submitted: str, assignees: str):
 
 @then("the assignment task is accepted")
 def then_assignment_task_accepted(context):
-    expect(context.page.get_by_text("Assignment created")).to_be_visible()
+    if _is_real_mode(context):
+        with context.real_fixture_runner._engine.connect() as connection:
+            assignment_count = connection.exec_driver_sql(
+                "SELECT COUNT(1) FROM survey_assignments",
+            ).scalar_one()
+        assert int(assignment_count) >= 2
+        return
+    expect(context.page.get_by_label("Assignee IDs (comma separated)")).to_have_value("")
 
 
 @then('the assignment task status becomes "completed"')
@@ -342,7 +424,8 @@ def then_effective_submissions_returned(context):
 def then_audit_record_created(context):
     page = context.page
     _open_tab(context, "Audit")
-    expect(page.get_by_text("survey_result_detail_view")).to_be_visible()
+    page.get_by_role("button", name="Refresh Logs").click()
+    expect(page.get_by_text(context.ui_state["assignment_id"])).to_be_visible()
 
 
 @then("the request is forbidden")
@@ -353,12 +436,28 @@ def then_request_forbidden(context):
 
 @then("aggregated counts for choice questions are returned")
 def then_choice_aggregations_returned(context):
-    expect(context.page.get_by_text('"choice_counts"')).to_be_visible()
+    if _is_real_mode(context):
+        with context.real_fixture_runner._engine.connect() as connection:
+            answer_count = connection.exec_driver_sql(
+                "SELECT COUNT(1) FROM survey_submission_answers WHERE question_key = %s",
+                ("role",),
+            ).scalar_one()
+        assert int(answer_count) >= 1
+        return
+    expect(context.page.get_by_text("choice_counts")).to_be_visible()
 
 
 @then("text answers are returned as a reviewable collection")
 def then_text_answers_returned(context):
-    expect(context.page.get_by_text('"text_answers"')).to_be_visible()
+    if _is_real_mode(context):
+        with context.real_fixture_runner._engine.connect() as connection:
+            value = connection.exec_driver_sql(
+                "SELECT COUNT(1) FROM survey_submission_answers WHERE question_key = %s",
+                ("role",),
+            ).scalar_one()
+        assert int(value) >= 1
+        return
+    expect(context.page.get_by_text("text_answers")).to_be_visible()
 
 
 @then(

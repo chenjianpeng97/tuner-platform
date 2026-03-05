@@ -49,7 +49,16 @@ uv run --project backend pytest
 uv sync --group bdd
 uv run --group bdd behave features
 uv run --group bdd python -m playwright install chromium
-uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
+
+# HTTP-stage（默认 mock）
+BDD_HTTP_MODE=mock uv run --group bdd behave --stage http --tags http features
+
+# HTTP-stage（real: 真实后端服务 + DB）
+BDD_HTTP_MODE=real APP_ENV=local uv run --group bdd behave --stage http --tags http features
+
+# UI-stage（mock/dev 可切换）
+BDD_UI_MODE=mock uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
+BDD_UI_MODE=dev uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
 
 # Skills 脚本
 uv sync --group skills

@@ -10,6 +10,7 @@ from sqlalchemy import (
     Table,
     UniqueConstraint,
 )
+from sqlalchemy.orm import relationship
 
 from app.domain.enums.survey import QuestionType, SurveyAssignmentStatus
 from app.infrastructure.persistence_sqla.models.survey import (
@@ -66,7 +67,15 @@ survey_template_questions_table = Table(
     ),
     Column("key", String(64), nullable=False),
     Column("title", String(512), nullable=False),
-    Column("question_type", Enum(QuestionType, name="questiontype"), nullable=False),
+    Column(
+        "question_type",
+        Enum(
+            QuestionType,
+            name="questiontype",
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
+        nullable=False,
+    ),
     Column("required", Boolean, nullable=False),
     Column("order_no", Integer, nullable=False),
     UniqueConstraint(
@@ -103,7 +112,11 @@ survey_assignments_table = Table(
     ),
     Column(
         "status",
-        Enum(SurveyAssignmentStatus, name="surveyassignmentstatus"),
+        Enum(
+            SurveyAssignmentStatus,
+            name="surveyassignmentstatus",
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
+        ),
         nullable=False,
     ),
     Column("due_at", DateTime(timezone=True), nullable=True),
@@ -182,28 +195,93 @@ survey_result_access_audits_table = Table(
 
 
 def map_survey_tables() -> None:
-    mapper_registry.map_imperatively(SurveyTemplateModel, survey_templates_table)
+    mapper_registry.map_imperatively(
+        SurveyTemplateModel,
+        survey_templates_table,
+        properties={
+            "versions": relationship(
+                SurveyTemplateVersionModel,
+                back_populates="template",
+            ),
+        },
+    )
     mapper_registry.map_imperatively(
         SurveyTemplateVersionModel,
         survey_template_versions_table,
+        properties={
+            "template": relationship(
+                SurveyTemplateModel,
+                back_populates="versions",
+            ),
+            "questions": relationship(
+                SurveyTemplateQuestionModel,
+                back_populates="template_version",
+            ),
+        },
     )
     mapper_registry.map_imperatively(
         SurveyTemplateQuestionModel,
         survey_template_questions_table,
+        properties={
+            "template_version": relationship(
+                SurveyTemplateVersionModel,
+                back_populates="questions",
+            ),
+            "options": relationship(
+                SurveyTemplateQuestionOptionModel,
+                back_populates="question",
+            ),
+        },
     )
     mapper_registry.map_imperatively(
         SurveyTemplateQuestionOptionModel,
         survey_template_question_options_table,
+        properties={
+            "question": relationship(
+                SurveyTemplateQuestionModel,
+                back_populates="options",
+            ),
+        },
     )
-    mapper_registry.map_imperatively(SurveyAssignmentModel, survey_assignments_table)
+    mapper_registry.map_imperatively(
+        SurveyAssignmentModel,
+        survey_assignments_table,
+        properties={
+            "assignees": relationship(
+                SurveyAssignmentAssigneeModel,
+                back_populates="assignment",
+            ),
+        },
+    )
     mapper_registry.map_imperatively(
         SurveyAssignmentAssigneeModel,
         survey_assignment_assignees_table,
+        properties={
+            "assignment": relationship(
+                SurveyAssignmentModel,
+                back_populates="assignees",
+            ),
+        },
     )
-    mapper_registry.map_imperatively(SurveySubmissionModel, survey_submissions_table)
+    mapper_registry.map_imperatively(
+        SurveySubmissionModel,
+        survey_submissions_table,
+        properties={
+            "answers": relationship(
+                SurveySubmissionAnswerModel,
+                back_populates="submission",
+            ),
+        },
+    )
     mapper_registry.map_imperatively(
         SurveySubmissionAnswerModel,
         survey_submission_answers_table,
+        properties={
+            "submission": relationship(
+                SurveySubmissionModel,
+                back_populates="answers",
+            ),
+        },
     )
     mapper_registry.map_imperatively(
         SurveyResultAccessAuditModel,

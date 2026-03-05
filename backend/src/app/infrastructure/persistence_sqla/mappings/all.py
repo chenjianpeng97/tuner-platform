@@ -27,8 +27,15 @@ from app.infrastructure.persistence_sqla.mappings.auth_session import (
 from app.infrastructure.persistence_sqla.mappings.survey import map_survey_tables
 from app.infrastructure.persistence_sqla.mappings.user import map_users_table
 
+_MAPPED = False
+
 
 def map_tables() -> None:
+    global _MAPPED
+    if _MAPPED:
+        return
+
     map_users_table()
     map_auth_sessions_table()
     map_survey_tables()
+    _MAPPED = True

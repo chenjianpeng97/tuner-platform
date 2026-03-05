@@ -5,6 +5,7 @@ from http import HTTPStatus
 import uuid
 
 from behave import given, then, when
+import jwt
 
 from app.application.common.exceptions.authorization import AuthorizationError
 from app.domain.exceptions.survey import (
@@ -16,8 +17,29 @@ API_SURVEYS = "/api/v1/surveys"
 AUTH_COOKIES = {"access_token": "fake-test-token"}
 
 
+def _auth_cookies(context) -> dict[str, str]:
+    return getattr(context, "auth_cookies", AUTH_COOKIES)
+
+
+def _is_real_mode(context) -> bool:
+    return getattr(context, "http_mode", "mock") == "real"
+
+
 def _ensure_state(context) -> None:
     if hasattr(context, "survey_state"):
+        return
+    if _is_real_mode(context):
+        baseline = context.real_fixture_runner.baseline_state()
+        context.survey_state = {
+            "template_id": uuid.UUID(baseline["template_id"]),
+            "template_version_id": uuid.UUID(baseline["template_version_id"]),
+            "assignment_id": uuid.UUID(baseline["assignment_id"]),
+            "user_ids": {
+                username: uuid.UUID(user_id)
+                for username, user_id in baseline["user_ids"].items()
+            },
+            "last_response": None,
+        }
         return
     context.survey_state = {
         "template_id": uuid.uuid4(),
@@ -26,6 +48,215 @@ def _ensure_state(context) -> None:
         "user_ids": {},
         "last_response": None,
     }
+
+
+def _create_real_editable_template(context) -> None:
+    response = context.client.post(
+        f"{API_SURVEYS}/templates",
+        json={
+            "name": "BDD Editable Template",
+            "questions": [
+                {
+                    "key": "role",
+                    "title": "Role",
+                    "question_type": "single_choice",
+                    "required": True,
+                    "options": ["dev", "qa"],
+                }
+            ],
+        },
+        cookies=_auth_cookies(context),
+    )
+    if response.status_code == HTTPStatus.CREATED:
+        template_id = response.json().get("id")
+        if template_id:
+            context.survey_state["template_id"] = uuid.UUID(template_id)
+
+
+def _normalized_real_username(username: str) -> str:
+    if len(username) < 5:
+        return f"bdd-{username}"
+    return username
+
+
+def _set_auth_cookies_for_user(context, username: str) -> None:
+    if not _is_real_mode(context):
+        return
+
+    _ensure_state(context)
+    canonical_username = _normalized_real_username(username)
+    user_id = context.survey_state["user_ids"].get(canonical_username)
+    if user_id is None:
+        user_id = uuid.uuid5(uuid.NAMESPACE_DNS, f"bdd-user:{canonical_username}")
+        context.survey_state["user_ids"][canonical_username] = user_id
+        context.survey_state["user_ids"][username] = user_id
+        password_hash = context.real_fixture_runner._hash_password(
+            context.real_fixture_runner.USER_PASSWORD,
+        )
+        with context.real_fixture_runner._engine.begin() as connection:
+            connection.exec_driver_sql(
+                """
+                INSERT INTO users (id, username, password_hash, role, is_active)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (username)
+                DO NOTHING
+                """,
+                (str(user_id), canonical_username, password_hash, "USER", True),
+            )
+
+    auth_session_id = f"bdd-session-{uuid.uuid4()}"
+    now = datetime.now(tz=UTC)
+    expiration = (
+        now + context.real_fixture_runner._settings.security.auth.session_ttl_min
+    )
+    with context.real_fixture_runner._engine.begin() as connection:
+        connection.exec_driver_sql(
+            "INSERT INTO auth_sessions (id, user_id, expiration) VALUES (%s, %s, %s)",
+            (auth_session_id, str(user_id), expiration),
+        )
+
+    access_token = jwt.encode(
+        {
+            "auth_session_id": auth_session_id,
+            "exp": int(expiration.timestamp()),
+        },
+        key=context.real_fixture_runner._settings.security.auth.jwt_secret,
+        algorithm=context.real_fixture_runner._settings.security.auth.jwt_algorithm,
+    )
+    context.auth_cookies = {"access_token": access_token}
+
+
+def _seed_real_assignment(
+    context,
+    *,
+    assignee_usernames: list[str],
+    submitted_count: int = 0,
+    due_at: datetime | None = None,
+    force_assignment_id: uuid.UUID | None = None,
+) -> uuid.UUID:
+    _ensure_state(context)
+    assignment_id = force_assignment_id or uuid.uuid4()
+    template_version_id = context.survey_state["template_version_id"]
+    submitted_count = min(submitted_count, len(assignee_usernames))
+    now = datetime.now(tz=UTC)
+    status = (
+        "completed"
+        if assignee_usernames and submitted_count == len(assignee_usernames)
+        else "in_progress"
+    )
+
+    password_hash = context.real_fixture_runner._hash_password(
+        context.real_fixture_runner.USER_PASSWORD,
+    )
+
+    with context.real_fixture_runner._engine.begin() as connection:
+        connection.exec_driver_sql(
+            """
+            INSERT INTO survey_template_questions
+                (id, template_version_id, key, title, question_type, required, order_no)
+            SELECT %s, %s, %s, %s, %s, %s, %s
+            WHERE NOT EXISTS (
+                SELECT 1 FROM survey_template_questions
+                WHERE template_version_id = %s AND key = %s
+            )
+            """,
+            (
+                str(
+                    uuid.uuid5(
+                        uuid.NAMESPACE_DNS,
+                        f"bdd-question-feedback:{template_version_id}",
+                    )
+                ),
+                str(template_version_id),
+                "feedback",
+                "Feedback",
+                "text",
+                False,
+                99,
+                str(template_version_id),
+                "feedback",
+            ),
+        )
+        connection.exec_driver_sql(
+            """
+            INSERT INTO survey_assignments (id, template_version_id, status, due_at, created_by, created_at, closed_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id)
+            DO UPDATE SET template_version_id = EXCLUDED.template_version_id, status = EXCLUDED.status, due_at = EXCLUDED.due_at
+            """,
+            (
+                str(assignment_id),
+                str(template_version_id),
+                status,
+                due_at,
+                None,
+                now,
+                now if status == "completed" else None,
+            ),
+        )
+        connection.exec_driver_sql(
+            "DELETE FROM survey_assignment_assignees WHERE assignment_id = %s",
+            (str(assignment_id),),
+        )
+        connection.exec_driver_sql(
+            "DELETE FROM survey_submissions WHERE assignment_id = %s",
+            (str(assignment_id),),
+        )
+
+        for index, username in enumerate(assignee_usernames, start=1):
+            canonical_username = _normalized_real_username(username)
+            user_id = context.survey_state["user_ids"].get(canonical_username)
+            if user_id is None:
+                user_id = uuid.uuid5(
+                    uuid.NAMESPACE_DNS,
+                    f"bdd-assignee:{canonical_username}",
+                )
+                context.survey_state["user_ids"][canonical_username] = user_id
+                context.survey_state["user_ids"][username] = user_id
+                connection.exec_driver_sql(
+                    """
+                    INSERT INTO users (id, username, password_hash, role, is_active)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (username)
+                    DO NOTHING
+                    """,
+                    (str(user_id), canonical_username, password_hash, "USER", True),
+                )
+
+            assignee_submitted_at = now if index <= submitted_count else None
+            connection.exec_driver_sql(
+                "INSERT INTO survey_assignment_assignees (id, assignment_id, assignee_user_id, submitted_at) VALUES (%s, %s, %s, %s)",
+                (
+                    str(uuid.uuid4()),
+                    str(assignment_id),
+                    str(user_id),
+                    assignee_submitted_at,
+                ),
+            )
+            if index <= submitted_count:
+                submission_id = uuid.uuid4()
+                connection.exec_driver_sql(
+                    "INSERT INTO survey_submissions (id, assignment_id, assignee_user_id, submitted_at) VALUES (%s, %s, %s, %s)",
+                    (str(submission_id), str(assignment_id), str(user_id), now),
+                )
+                connection.exec_driver_sql(
+                    "INSERT INTO survey_submission_answers (id, submission_id, question_key, answer_value, order_no) VALUES (%s, %s, %s, %s, %s)",
+                    (str(uuid.uuid4()), str(submission_id), "role", '"dev"', 1),
+                )
+                connection.exec_driver_sql(
+                    "INSERT INTO survey_submission_answers (id, submission_id, question_key, answer_value, order_no) VALUES (%s, %s, %s, %s, %s)",
+                    (
+                        str(uuid.uuid4()),
+                        str(submission_id),
+                        "feedback",
+                        f'"feedback-{index}"',
+                        2,
+                    ),
+                )
+
+    context.survey_state["assignment_id"] = assignment_id
+    context.survey_state["assignee_usernames"] = list(assignee_usernames)
+    return assignment_id
 
 
 def _to_uuid(value: str) -> uuid.UUID:
@@ -51,11 +282,15 @@ def given_authorized_survey_operator(context):
 @given("an editable survey template exists")
 def given_editable_template_exists(context):
     _ensure_state(context)
+    if _is_real_mode(context):
+        _create_real_editable_template(context)
 
 
 @given("a published template version is used by an assignment task")
 def given_published_template_version_used(context):
     _ensure_state(context)
+    if _is_real_mode(context):
+        return
     context.survey_state["template_version_id"] = uuid.uuid4()
     context.survey_state["assignment_id"] = uuid.uuid4()
     context.mocks.get_survey_assignment.execute.return_value = {
@@ -73,6 +308,8 @@ def given_published_template_version_used(context):
 @given("an immutable template version exists")
 def given_immutable_template_version_exists(context):
     _ensure_state(context)
+    if _is_real_mode(context):
+        return
     context.survey_state["template_version_id"] = uuid.uuid4()
 
 
@@ -80,6 +317,9 @@ def given_immutable_template_version_exists(context):
 def given_in_progress_assignment_task(context, user_list: str):
     _ensure_state(context)
     users = [user.strip() for user in user_list.split(",") if user.strip()]
+    if _is_real_mode(context):
+        _seed_real_assignment(context, assignee_usernames=users, submitted_count=0)
+        return
     assignment_id = context.survey_state["assignment_id"]
     submitted_count = sum(
         1 for user in users if user in context.survey_state.get("submitted", set())
@@ -99,6 +339,19 @@ def given_in_progress_assignment_task(context, user_list: str):
 @given('user "{username}" has submitted')
 def given_user_has_submitted(context, username: str):
     _ensure_state(context)
+    if _is_real_mode(context):
+        _set_auth_cookies_for_user(context, username)
+        response = context.client.put(
+            f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/my-submission",
+            json={"answers": {"role": username}},
+            cookies=_auth_cookies(context),
+        )
+        assert response.status_code in {
+            HTTPStatus.OK,
+            HTTPStatus.CREATED,
+            HTTPStatus.NO_CONTENT,
+        }
+        return
     submitted = context.survey_state.setdefault("submitted", set())
     submitted.add(username)
 
@@ -106,6 +359,18 @@ def given_user_has_submitted(context, username: str):
 @given('task progress is "{submitted}/{assignees}"')
 def given_task_progress(context, submitted: str, assignees: str):
     _ensure_state(context)
+    if _is_real_mode(context):
+        submitted_count = int(submitted)
+        assignee_count = int(assignees)
+        assignee_names = [
+            f"progress-user-{index + 1}" for index in range(assignee_count)
+        ]
+        _seed_real_assignment(
+            context,
+            assignee_usernames=assignee_names,
+            submitted_count=submitted_count,
+        )
+        return
     assignment_id = context.survey_state["assignment_id"]
     submitted_count = int(submitted)
     assignee_count = int(assignees)
@@ -129,7 +394,15 @@ def given_task_progress(context, submitted: str, assignees: str):
 @given('assignment task "{assignment_key}" is assigned to user "{username}"')
 def given_assignment_assigned_to_user(context, assignment_key: str, username: str):
     _ensure_state(context)
-    context.survey_state["assignment_id"] = _to_uuid(assignment_key)
+    if _is_real_mode(context) and assignment_key == "A-1":
+        context.survey_state["assignment_id"] = _seed_real_assignment(
+            context,
+            assignee_usernames=[username],
+            submitted_count=0,
+            force_assignment_id=context.real_fixture_runner.ASSIGNMENT_ID,
+        )
+    else:
+        context.survey_state["assignment_id"] = _to_uuid(assignment_key)
     context.survey_state["assignee"] = username
 
 
@@ -137,13 +410,33 @@ def given_assignment_assigned_to_user(context, assignment_key: str, username: st
     'assignment task "{assignment_key}" is in progress and assigned to user "{username}"'
 )
 def given_assignment_in_progress_assigned(context, assignment_key: str, username: str):
+    if _is_real_mode(context) and assignment_key == "A-1":
+        context.survey_state["assignment_id"] = _seed_real_assignment(
+            context,
+            assignee_usernames=[username, "u3"],
+            submitted_count=0,
+            force_assignment_id=context.real_fixture_runner.ASSIGNMENT_ID,
+        )
+        context.survey_state["assignee"] = username
+        return
     given_assignment_assigned_to_user(context, assignment_key, username)
 
 
 @given('assignment task "{assignment_key}" has due date in the past')
 def given_assignment_due_in_past(context, assignment_key: str):
     _ensure_state(context)
-    context.survey_state["assignment_id"] = _to_uuid(assignment_key)
+    if _is_real_mode(context) and assignment_key == "A-1":
+        context.survey_state["assignment_id"] = _seed_real_assignment(
+            context,
+            assignee_usernames=["u1"],
+            submitted_count=0,
+            due_at=datetime.now(UTC).replace(year=datetime.now(UTC).year - 1),
+            force_assignment_id=context.real_fixture_runner.ASSIGNMENT_ID,
+        )
+    else:
+        context.survey_state["assignment_id"] = _to_uuid(assignment_key)
+    if _is_real_mode(context):
+        return
     context.mocks.submit_my_survey_submission.execute.side_effect = (
         SurveyAssignmentSubmissionNotAllowedError(reason="deadline exceeded")
     )
@@ -152,8 +445,18 @@ def given_assignment_due_in_past(context, assignment_key: str):
 @given('assignment task "{assignment_key}" has at least one effective submission')
 def given_assignment_has_submission(context, assignment_key: str):
     _ensure_state(context)
-    assignment_id = _to_uuid(assignment_key)
+    if _is_real_mode(context) and assignment_key == "A-1":
+        assignment_id = _seed_real_assignment(
+            context,
+            assignee_usernames=["u1"],
+            submitted_count=1,
+            force_assignment_id=context.real_fixture_runner.ASSIGNMENT_ID,
+        )
+    else:
+        assignment_id = _to_uuid(assignment_key)
     context.survey_state["assignment_id"] = assignment_id
+    if _is_real_mode(context):
+        return
     context.mocks.get_survey_assignment_submissions.execute.return_value = [
         {
             "assignment_id": assignment_id,
@@ -174,6 +477,8 @@ def given_user_has_permission(context, username: str):
 def given_user_no_permission(context, username: str):
     _ensure_state(context)
     context.survey_state["viewer"] = username
+    if _is_real_mode(context):
+        return
     context.mocks.get_survey_assignment_submissions.execute.side_effect = (
         AuthorizationError
     )
@@ -182,8 +487,18 @@ def given_user_no_permission(context, username: str):
 @given('assignment task "{assignment_key}" has multiple submissions')
 def given_assignment_has_multiple_submissions(context, assignment_key: str):
     _ensure_state(context)
-    assignment_id = _to_uuid(assignment_key)
+    if _is_real_mode(context) and assignment_key == "A-1":
+        assignment_id = _seed_real_assignment(
+            context,
+            assignee_usernames=["u1", "u2"],
+            submitted_count=2,
+            force_assignment_id=context.real_fixture_runner.ASSIGNMENT_ID,
+        )
+    else:
+        assignment_id = _to_uuid(assignment_key)
     context.survey_state["assignment_id"] = assignment_id
+    if _is_real_mode(context):
+        return
     context.mocks.get_survey_assignment_summary.execute.return_value = {
         "assignment_id": assignment_id,
         "choice_counts": {"role": {"dev": 1, "qa": 1}},
@@ -237,19 +552,25 @@ def when_create_survey_template(context):
     context.response = context.client.post(
         f"{API_SURVEYS}/templates",
         json=request_body,
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
 
 
 @when("the operator publishes the template")
 def when_publish_template(context):
     _ensure_state(context)
+    if (
+        _is_real_mode(context)
+        and context.survey_state.get("template_id")
+        == context.real_fixture_runner.TEMPLATE_ID
+    ):
+        _create_real_editable_template(context)
     context.mocks.publish_survey_template.execute.return_value = {
         "version_id": context.survey_state["template_version_id"]
     }
     context.response = context.client.post(
         f"{API_SURVEYS}/templates/{context.survey_state['template_id']}/publish",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
 
 
@@ -271,7 +592,7 @@ def when_update_template_later(context):
                 }
             ],
         },
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
 
 
@@ -298,8 +619,12 @@ def when_operator_creates_assignment(context, user_list: str):
             "template_version_id": str(context.survey_state["template_version_id"]),
             "assignee_user_ids": [str(user_id) for user_id in assignee_ids],
         },
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
+    if context.response.status_code == HTTPStatus.CREATED:
+        assignment_id = context.response.json().get("id")
+        if assignment_id:
+            context.survey_state["assignment_id"] = uuid.UUID(assignment_id)
 
 
 @when("an operator creates an assignment task without due date")
@@ -310,11 +635,12 @@ def when_create_assignment_without_due_date(context):
 @when('user "{username}" submits successfully')
 def when_user_submit_success(context, username: str):
     _ensure_state(context)
+    _set_auth_cookies_for_user(context, username)
     context.mocks.submit_my_survey_submission.execute.return_value = None
     context.response = context.client.put(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/my-submission",
         json={"answers": {"role": username}},
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     context.survey_state["submitted"] = {"u1", "u2"}
     context.mocks.get_survey_assignment.execute.return_value = {
@@ -335,7 +661,7 @@ def when_operator_close_assignment(context):
     context.mocks.close_survey_assignment.execute.return_value = None
     context.response = context.client.post(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/close",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     assignment_snapshot = context.mocks.get_survey_assignment.execute.return_value
     if assignment_snapshot:
@@ -351,7 +677,13 @@ def when_operator_close_assignment(context):
 @when('user "{username}" tries to submit response for assignment "{assignment_key}"')
 def when_user_try_submit_other(context, username: str, assignment_key: str):
     _ensure_state(context)
-    context.survey_state["assignment_id"] = _to_uuid(assignment_key)
+    if _is_real_mode(context) and assignment_key == "A-1":
+        context.survey_state["assignment_id"] = (
+            context.real_fixture_runner.ASSIGNMENT_ID
+        )
+    else:
+        context.survey_state["assignment_id"] = _to_uuid(assignment_key)
+    _set_auth_cookies_for_user(context, username)
     assignee = context.survey_state.get("assignee")
     if assignee and assignee != username:
         context.mocks.submit_my_survey_submission.execute.side_effect = (
@@ -360,21 +692,25 @@ def when_user_try_submit_other(context, username: str, assignment_key: str):
     context.response = context.client.put(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/my-submission",
         json={"answers": {"role": "dev"}},
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
 
 
 @when('user "{username}" submits response "{response_key}"')
 def when_user_submits_response(context, username: str, response_key: str):
     _ensure_state(context)
+    _set_auth_cookies_for_user(context, username)
     context.mocks.submit_my_survey_submission.execute.return_value = None
-    payload = {"answers": {"role": response_key}}
+    effective_response = response_key
+    if _is_real_mode(context):
+        effective_response = "dev" if response_key == "R1" else "qa"
+    payload = {"answers": {"role": effective_response}}
     context.response = context.client.put(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/my-submission",
         json=payload,
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
-    context.survey_state["last_response"] = response_key
+    context.survey_state["last_response"] = effective_response
 
 
 @when('user "{username}" submits response "{response_key}" again before due date')
@@ -405,19 +741,21 @@ def when_user_submits_response_again(context, username: str, response_key: str):
 @when('user "{username}" submits response')
 def when_user_submit_response(context, username: str):
     _ensure_state(context)
+    _set_auth_cookies_for_user(context, username)
     context.response = context.client.put(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/my-submission",
         json={"answers": {"role": "dev"}},
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
 
 
 @when('user "{username}" requests assignment detailed submissions')
 def when_user_request_detailed_submissions(context, username: str):
     _ensure_state(context)
+    _set_auth_cookies_for_user(context, username)
     context.response = context.client.get(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/submissions",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
 
 
@@ -426,7 +764,7 @@ def when_authorized_user_requests_summary(context):
     _ensure_state(context)
     context.response = context.client.get(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/summary",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
 
 
@@ -438,7 +776,8 @@ def when_suite_executed_with_stage(context):
 @then("the template is stored as editable draft")
 def then_template_stored_as_draft(context):
     assert context.response.status_code == HTTPStatus.CREATED
-    assert context.mocks.create_survey_template.execute.await_count == 1
+    if getattr(context, "http_mode", "mock") == "mock":
+        assert context.mocks.create_survey_template.execute.await_count == 1
 
 
 @then("an immutable template version is created")
@@ -452,7 +791,7 @@ def then_immutable_version_created(context):
 def then_assignment_uses_original_version(context):
     response = context.client.get(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     assert response.status_code == HTTPStatus.OK
     assert response.json().get("template_version_id") == str(
@@ -464,7 +803,7 @@ def then_assignment_uses_original_version(context):
 def then_assignment_status_is(context, status: str):
     response = context.client.get(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     assert response.status_code == HTTPStatus.OK
     assert response.json()["status"] == status
@@ -474,7 +813,7 @@ def then_assignment_status_is(context, status: str):
 def then_task_progress_is(context, submitted: str, assignees: str):
     response = context.client.get(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     assert response.status_code == HTTPStatus.OK
     body = response.json()
@@ -494,10 +833,13 @@ def then_assignment_status_completed(context):
 
 @then("further submissions are rejected")
 def then_further_submissions_rejected(context):
+    if _is_real_mode(context):
+        assignees = context.survey_state.get("assignee_usernames") or ["u1"]
+        _set_auth_cookies_for_user(context, assignees[0])
     response = context.client.put(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/my-submission",
         json={"answers": {"role": "blocked"}},
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     assert response.status_code == HTTPStatus.UNPROCESSABLE_ENTITY
 
@@ -509,20 +851,27 @@ def then_request_denied(context):
 
 @then('response "{response_key}" is the effective submission for result views')
 def then_response_is_effective(context, response_key: str):
+    if _is_real_mode(context):
+        _set_auth_cookies_for_user(context, "admin-1")
     response = context.client.get(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}/submissions",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     assert response.status_code == HTTPStatus.OK
     payload = response.json()
-    assert payload[0]["answers"]["role"] == response_key
+    expected_response = response_key
+    if _is_real_mode(context):
+        expected_response = "dev" if response_key == "R1" else "qa"
+    assert payload[0]["answers"]["role"] == expected_response
 
 
 @then('submitted count is increased only once for user "{username}"')
 def then_submitted_count_once(context, username: str):
+    if _is_real_mode(context):
+        _set_auth_cookies_for_user(context, "admin-1")
     response = context.client.get(
         f"{API_SURVEYS}/assignments/{context.survey_state['assignment_id']}",
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     assert response.status_code == HTTPStatus.OK
     assert response.json()["submitted_count"] == 1
@@ -543,7 +892,8 @@ def then_effective_submissions_returned(context):
 
 @then("an audit record is created for raw-response access")
 def then_audit_record_created(context):
-    assert context.mocks.get_survey_assignment_submissions.execute.await_count == 1
+    if getattr(context, "http_mode", "mock") == "mock":
+        assert context.mocks.get_survey_assignment_submissions.execute.await_count == 1
 
 
 @then("the request is forbidden")

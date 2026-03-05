@@ -1,10 +1,25 @@
 SHELL := /bin/bash
 APP_ENV ?= local
 
-.PHONY: bdd-http frontend-dev frontend-dev-mock frontend-api-generate frontend-api-typecheck frontend-mock-init backend-dev backend-dev-doc dev
+.PHONY: bdd-http bdd-http-mock bdd-http-real bdd-ui bdd-ui-mock bdd-ui-dev frontend-dev frontend-dev-mock frontend-api-generate frontend-api-typecheck frontend-mock-init backend-dev backend-dev-doc dev
 
 bdd-http:
-	uv run --group bdd behave --stage http --tags http
+	BDD_HTTP_MODE=mock uv run --group bdd behave --stage http --tags http
+
+bdd-http-mock:
+	BDD_HTTP_MODE=mock uv run --group bdd behave --stage http --tags http
+
+bdd-http-real:
+	BDD_HTTP_MODE=real uv run --group bdd behave --stage http --tags http
+
+bdd-ui:
+	BDD_UI_MODE=mock uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
+
+bdd-ui-mock:
+	BDD_UI_MODE=mock uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
+
+bdd-ui-dev:
+	BDD_UI_MODE=dev uv run --group bdd behave --stage ui features/survey-assignment-workflow.feature
 
 frontend-dev:
 	pnpm --dir frontend run dev

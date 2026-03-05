@@ -52,6 +52,7 @@ class SqlaSurveyAssignmentDataMapper(SurveyAssignmentCommandGateway):
                 assignee_model = SurveyAssignmentAssigneeModel()
                 assignee_model.id = uuid4()
                 assignee_model.assignment_id = assignment.id_.value
+                assignee_model.assignment = assignment_model
                 assignee_model.assignee_user_id = assignee_user_id.value
                 assignee_model.submitted_at = None
                 self._session.add(assignee_model)
@@ -168,15 +169,16 @@ class SqlaSurveyAssignmentDataMapper(SurveyAssignmentCommandGateway):
         existed_stmt = select(survey_submissions_table.c.id).where(
             survey_submissions_table.c.id == submission.id_.value
         )
+        submission_model: SurveySubmissionModel | None = None
         try:
             existed = (await self._session.execute(existed_stmt)).one_or_none()
             if existed is None:
-                model = SurveySubmissionModel()
-                model.id = submission.id_.value
-                model.assignment_id = submission.assignment_id.value
-                model.assignee_user_id = submission.assignee_user_id.value
-                model.submitted_at = submission.submitted_at
-                self._session.add(model)
+                submission_model = SurveySubmissionModel()
+                submission_model.id = submission.id_.value
+                submission_model.assignment_id = submission.assignment_id.value
+                submission_model.assignee_user_id = submission.assignee_user_id.value
+                submission_model.submitted_at = submission.submitted_at
+                self._session.add(submission_model)
             else:
                 await self._session.execute(
                     update(survey_submissions_table)
@@ -193,6 +195,8 @@ class SqlaSurveyAssignmentDataMapper(SurveyAssignmentCommandGateway):
                 answer_model = SurveySubmissionAnswerModel()
                 answer_model.id = uuid4()
                 answer_model.submission_id = submission.id_.value
+                if submission_model is not None:
+                    answer_model.submission = submission_model
                 answer_model.question_key = question_key
                 answer_model.answer_value = json.dumps(answer)
                 answer_model.order_no = index

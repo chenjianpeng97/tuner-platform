@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
@@ -9,6 +11,7 @@ class SurveyTemplateModel:
     name: str
     created_at: datetime
     updated_at: datetime
+    versions: list[SurveyTemplateVersionModel]
 
 
 class SurveyTemplateVersionModel:
@@ -17,6 +20,8 @@ class SurveyTemplateVersionModel:
     version: int
     is_published: bool
     created_at: datetime
+    template: SurveyTemplateModel
+    questions: list[SurveyTemplateQuestionModel]
 
 
 class SurveyTemplateQuestionModel:
@@ -27,6 +32,8 @@ class SurveyTemplateQuestionModel:
     question_type: QuestionType
     required: bool
     order_no: int
+    template_version: SurveyTemplateVersionModel
+    options: list[SurveyTemplateQuestionOptionModel]
 
 
 class SurveyTemplateQuestionOptionModel:
@@ -35,6 +42,7 @@ class SurveyTemplateQuestionOptionModel:
     value: str
     label: str
     order_no: int
+    question: SurveyTemplateQuestionModel
 
 
 class SurveyAssignmentModel:
@@ -45,6 +53,7 @@ class SurveyAssignmentModel:
     created_by: UUID | None
     created_at: datetime
     closed_at: datetime | None
+    assignees: list[SurveyAssignmentAssigneeModel]
 
 
 class SurveyAssignmentAssigneeModel:
@@ -52,6 +61,7 @@ class SurveyAssignmentAssigneeModel:
     assignment_id: UUID
     assignee_user_id: UUID
     submitted_at: datetime | None
+    assignment: SurveyAssignmentModel
 
 
 class SurveySubmissionModel:
@@ -59,6 +69,7 @@ class SurveySubmissionModel:
     assignment_id: UUID
     assignee_user_id: UUID
     submitted_at: datetime
+    answers: list[SurveySubmissionAnswerModel]
 
 
 class SurveySubmissionAnswerModel:
@@ -67,6 +78,7 @@ class SurveySubmissionAnswerModel:
     question_key: str
     answer_value: str
     order_no: int
+    submission: SurveySubmissionModel
 
 
 class SurveyResultAccessAuditModel:

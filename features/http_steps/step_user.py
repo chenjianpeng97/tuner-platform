@@ -55,12 +55,48 @@ API_USER_ACTIVATION = "/api/v1/users/{user_id}/activation"
 AUTH_COOKIES: dict[str, str] = {"access_token": "fake-test-token"}
 
 
+def _auth_cookies(context) -> dict[str, str]:
+    return getattr(context, "auth_cookies", AUTH_COOKIES)
+
+
+def _is_real_mode(context) -> bool:
+    return getattr(context, "http_mode", "mock") == "real"
+
+
+def _real_username(username: str) -> str:
+    if len(username) < 5:
+        return f"bdd-{username}"
+    return username
+
+
+def _upsert_real_user(context, username: str, is_active: bool) -> str:
+    actual_username = _real_username(username)
+    user_id = uuid.uuid5(uuid.NAMESPACE_DNS, f"bdd-user-step:{actual_username}")
+    password_hash = context.real_fixture_runner._hash_password("testpass1")
+    with context.real_fixture_runner._engine.begin() as connection:
+        connection.exec_driver_sql(
+            """
+            INSERT INTO users (id, username, password_hash, role, is_active)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (username)
+            DO UPDATE SET is_active = EXCLUDED.is_active
+            """,
+            (str(user_id), actual_username, password_hash, "USER", is_active),
+        )
+
+    context.users[actual_username] = {"id": str(user_id), "is_active": is_active}
+    return actual_username
+
+
 # ===================================================================
 # Given – record scenario state (no HTTP calls, no mock configuration)
 # ===================================================================
 @given('an existing user with username "{username}"')
 def given_existing_user(context, username):
     """Record that *username* already exists (for duplicate-check scenarios)."""
+    if _is_real_mode(context):
+        context.current_username = _upsert_real_user(context, username, is_active=True)
+        return
     context.users[username] = {"id": str(uuid.uuid4()), "is_active": True}
     context.current_username = username
 
@@ -68,6 +104,9 @@ def given_existing_user(context, username):
 @given('a deactivated user with username "{username}"')
 def given_deactivated_user(context, username):
     """Record a deactivated user."""
+    if _is_real_mode(context):
+        context.current_username = _upsert_real_user(context, username, is_active=False)
+        return
     context.users[username] = {"id": str(uuid.uuid4()), "is_active": False}
     context.current_username = username
 
@@ -75,6 +114,9 @@ def given_deactivated_user(context, username):
 @given('an active user with username "{username}"')
 def given_active_user(context, username):
     """Record an active user."""
+    if _is_real_mode(context):
+        context.current_username = _upsert_real_user(context, username, is_active=True)
+        return
     context.users[username] = {"id": str(uuid.uuid4()), "is_active": True}
     context.current_username = username
 
@@ -91,11 +133,11 @@ def when_actor_creates_user(context, username):
     translates to **409 Conflict**.
     """
     mocks = context.mocks
-    if username in context.users:
+    if not _is_real_mode(context) and username in context.users:
         mocks.create_user.execute.side_effect = UsernameAlreadyExistsError(
             username,
         )
-    else:
+    elif not _is_real_mode(context):
         mocks.create_user.execute.return_value = CreateUserResponse(
             id=uuid.uuid4(),
         )
@@ -108,7 +150,7 @@ def when_actor_creates_user(context, username):
     context.response = context.client.post(
         API_USERS,
         json=request_body.model_dump(mode="json"),
-        cookies=AUTH_COOKIES,
+        cookies=_auth_cookies(context),
     )
     context.current_username = username
 
@@ -144,7 +186,7 @@ def when_authorized_activates(context):
 
     user_id = context.users[context.current_username]["id"]
     url = API_USER_ACTIVATION.format(user_id=user_id)
-    context.response = context.client.put(url, cookies=AUTH_COOKIES)
+    context.response = context.client.put(url, cookies=_auth_cookies(context))
 
 
 @when("an authorized actor deactivates the user")
@@ -154,7 +196,7 @@ def when_authorized_deactivates(context):
 
     user_id = context.users[context.current_username]["id"]
     url = API_USER_ACTIVATION.format(user_id=user_id)
-    context.response = context.client.delete(url, cookies=AUTH_COOKIES)
+    context.response = context.client.delete(url, cookies=_auth_cookies(context))
 
 
 # ===================================================================
