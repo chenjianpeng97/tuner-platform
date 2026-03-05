@@ -55,14 +55,20 @@ export const sidebarData: SidebarData = {
       title: 'Business',
       items: [
         {
-          title: 'Templates',
-          url: '/surveys/templates',
-          icon: FileText,
-        },
-        {
-          title: 'Assignments',
-          url: '/surveys/assignments',
+          title: 'Survey',
           icon: ClipboardList,
+          items: [
+            {
+              title: 'Templates',
+              url: '/surveys/templates',
+              icon: FileText,
+            },
+            {
+              title: 'Assignments',
+              url: '/surveys/assignments',
+              icon: ClipboardList,
+            },
+          ],
         },
         {
           title: 'Users',

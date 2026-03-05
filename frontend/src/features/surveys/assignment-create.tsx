@@ -58,7 +58,7 @@ export function SurveyAssignmentCreate() {
         onSuccess: (data) => {
             toast.success('Assignment created')
             queryClient.invalidateQueries({ queryKey: ['surveys', 'assignments'] })
-            navigate({ to: '/surveys/assignments/$assignmentId', params: { assignmentId: data.id_ } })
+            navigate({ to: '/surveys/assignments/$assignmentId', params: { assignmentId: data.id } })
         },
         onError: () => toast.error('Failed to create assignment'),
     })

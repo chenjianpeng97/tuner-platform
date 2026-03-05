@@ -73,11 +73,12 @@ export function SurveyFill({ assignmentId }: Props) {
     }, [existing])
 
     const submitMutation = useMutation({
-        mutationFn: (onlyDraft: boolean) =>
-            putMySurveySubmission(assignmentId, {
-                is_draft: onlyDraft,
+        mutationFn: (onlyDraft: boolean) => {
+            void onlyDraft
+            return putMySurveySubmission(assignmentId, {
                 answers,
-            }),
+            })
+        },
         onSuccess: (_, onlyDraft) => {
             if (onlyDraft) {
                 toast.success('Draft saved')

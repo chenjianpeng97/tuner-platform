@@ -24,6 +24,10 @@ def _fill_default_answers(context, role: str) -> None:
     )
 
 
+def _open_tab(context, tab_name: str) -> None:
+    context.page.get_by_role("tab", name=tab_name).click()
+
+
 @given("an authorized survey operator")
 def given_authorized_survey_operator(context):
     _open_workflow(context)
@@ -50,7 +54,7 @@ def given_in_progress_assignment_task(context, user_list: str):
     context.ui_state["users"] = [
         user.strip() for user in user_list.split(",") if user.strip()
     ]
-    context.page.get_by_role("tab", name="Assignments").click()
+    _open_tab(context, "Assignments")
 
 
 @given('user "{username}" has submitted')
@@ -162,7 +166,7 @@ def when_operator_creates_assignment(context, user_list: str):
     assignee_ids = [
         f"{index + 4}1111111-1111-1111-1111-111111111111" for index in range(len(users))
     ]
-    page.get_by_role("tab", name="Assignments").click()
+    _open_tab(context, "Assignments")
     page.get_by_label("Template Version ID").fill(
         context.ui_state["template_version_id"]
     )
@@ -181,7 +185,7 @@ def when_create_assignment_without_due_date(context):
 def when_user_submit_success(context, username: str):
     _open_workflow(context)
     page = context.page
-    page.get_by_role("tab", name="My Submission").click()
+    _open_tab(context, "My Submission")
     page.get_by_label("Assignment ID").fill(context.ui_state["assignment_id"])
     _fill_default_answers(context, username)
     page.get_by_role("button", name="Save My Submission").click()
@@ -193,7 +197,7 @@ def when_user_submit_success(context, username: str):
 def when_operator_close_assignment(context):
     _open_workflow(context)
     page = context.page
-    page.get_by_role("tab", name="Assignments").click()
+    _open_tab(context, "Assignments")
     page.get_by_label("Close Assignment ID").fill(context.ui_state["assignment_id"])
     page.get_by_role("button", name="Close Assignment").click()
     context.ui_state["status"] = "completed"
@@ -204,7 +208,7 @@ def when_operator_close_assignment(context):
 def when_user_try_submit_other(context, username: str, assignment_key: str):
     _open_workflow(context)
     page = context.page
-    page.get_by_role("tab", name="My Submission").click()
+    _open_tab(context, "My Submission")
     page.get_by_label("Assignment ID").fill(_assignment_id(assignment_key))
     page.get_by_label("Answers JSON").fill("{ invalid }")
     page.get_by_role("button", name="Save My Submission").click()
@@ -215,7 +219,7 @@ def when_user_try_submit_other(context, username: str, assignment_key: str):
 def when_user_submits_response(context, username: str, response_key: str):
     _open_workflow(context)
     page = context.page
-    page.get_by_role("tab", name="My Submission").click()
+    _open_tab(context, "My Submission")
     page.get_by_label("Assignment ID").fill(context.ui_state["assignment_id"])
     _fill_default_answers(context, response_key)
     page.get_by_role("button", name="Save My Submission").click()
@@ -231,7 +235,7 @@ def when_user_submits_response_again(context, username: str, response_key: str):
 def when_user_submit_response(context, username: str):
     _open_workflow(context)
     page = context.page
-    page.get_by_role("tab", name="My Submission").click()
+    _open_tab(context, "My Submission")
     page.get_by_label("Assignment ID").fill(context.ui_state["assignment_id"])
     if context.ui_state.get("force_error"):
         page.get_by_label("Answers JSON").fill("{ invalid }")
@@ -245,7 +249,7 @@ def when_user_submit_response(context, username: str):
 def when_user_request_detailed_submissions(context, username: str):
     _open_workflow(context)
     page = context.page
-    page.get_by_role("tab", name="Results").click()
+    _open_tab(context, "Results")
     page.get_by_label("Assignment ID").fill(context.ui_state["assignment_id"])
     page.get_by_role("button", name="Load Results").click()
     context.ui_state["requested_submissions"] = True
@@ -313,7 +317,7 @@ def then_request_denied(context):
 def then_response_is_effective(context, response_key: str):
     _open_workflow(context)
     page = context.page
-    page.get_by_role("tab", name="Results").click()
+    _open_tab(context, "Results")
     page.get_by_label("Assignment ID").fill(context.ui_state["assignment_id"])
     page.get_by_role("button", name="Load Results").click()
     assert context.ui_state.get("last_response") == response_key
@@ -337,7 +341,7 @@ def then_effective_submissions_returned(context):
 @then("an audit record is created for raw-response access")
 def then_audit_record_created(context):
     page = context.page
-    page.get_by_role("tab", name="Audit").click()
+    _open_tab(context, "Audit")
     expect(page.get_by_text("survey_result_detail_view")).to_be_visible()
 
 
